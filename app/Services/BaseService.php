@@ -59,13 +59,9 @@ abstract class BaseService implements BaseInterface
     {
         return $this->handle(function () use ($filters) {
             $query = $this->model->newQuery();
-
-            // نقوم أولًا بتنظيف الفلاتر (whitelist + suffixes)
-            $filters = $this->sanitizeFilters($filters);
-
-            // ثم نطبق الفلاتر على الاستعلام
-            $this->applyFilters($query, $filters);
-
+             if($filters!=[]){
+                $this->applyFilters($query, $filters);
+             }
             return $query->get();
         });
     }
@@ -128,39 +124,6 @@ abstract class BaseService implements BaseInterface
     }
 
 
-    protected function sanitizeFilters(array $filters): array
-    {
-        $allowed = $this->getFilterable();
-        $out = [];
-        $special = ['with', 'search', 'sort', 'limit', 'offset', 'page', 'per_page'];
-
-        foreach ($filters as $k => $v) {
-            if (in_array($k, $special, true)) {
-                if ($k === 'search' && is_array($v) && !empty($v['term']) && !empty($v['fields'])) {
-                    $fields = array_values(array_intersect($v['fields'], $allowed));
-                    if (!empty($fields)) $out['search'] = ['term' => $v['term'], 'fields' => $fields];
-                } else {
-                    $out[$k] = $v;
-                }
-                continue;
-            }
-
-            // احصل على الحقل الأساسي بدون اللاحقات (__like, __in, ...)
-            $base = $k;
-            foreach (['__like', '__in', '__gt', '__gte', '__lt', '__lte', '__null', '__between'] as $suf) {
-                if (str_ends_with($k, $suf)) {
-                    $base = substr($k, 0, -strlen($suf));
-                    break;
-                }
-            }
-
-            if (in_array($base, $allowed, true)) {
-                $out[$k] = $v;
-            }
-        }
-
-        return $out;
-    }
 
     /**
      * Summary of applyFilters
@@ -168,65 +131,26 @@ abstract class BaseService implements BaseInterface
      * @param array $filters
      * @return void
      */
-    protected function applyFilters(Builder $q, array $filters): void
+    protected function applyFilters(Builder $query, array $filters): void
     {
-        if (!empty($filters['with']) && is_array($filters['with'])) $q->with($filters['with']);
-
-        if (!empty($filters['search']['term']) && !empty($filters['search']['fields'])) {
-            $term = $filters['search']['term'];
-            $q->where(function ($sub) use ($term, $filters) {
-                foreach ($filters['search']['fields'] as $f) $sub->orWhere($f, 'like', "%{$term}%");
-            });
+        if (empty($filters)) {
+            return;
         }
 
-        foreach ($filters as $k => $v) {
-            if (in_array($k, ['with', 'search', 'sort', 'limit', 'offset', 'page', 'per_page'], true)) continue;
+        foreach ($filters as $field => $value) {
 
-            if (str_ends_with($k, '__like')) {
-                $f = str_replace('__like', '', $k);
-                if ($v !== null && $v !== '') $q->where($f, 'like', "%{$v}%");
+            if ($value === null) {
                 continue;
             }
-
-            if (str_ends_with($k, '__in')) {
-                $f = str_replace('__in', '', $k);
-                if (is_array($v)) $q->whereIn($f, $v);
-                continue;
-            }
-
-            foreach (['__gt' => '>', '__gte' => '>=', '__lt' => '<', '__lte' => '<='] as $suf => $op) {
-                if (str_ends_with($k, $suf)) {
-                    $f = str_replace($suf, '', $k);
-                    if ($v !== null && $v !== '') $q->where($f, $op, $v);
-                    continue 2;
+            if (is_string($value)) {
+                $value = trim($value);
+                if ($value === '') {
+                    continue;
                 }
             }
 
-            if (str_ends_with($k, '__null')) {
-                $f = str_replace('__null', '', $k);
-                $v ? $q->whereNull($f) : $q->whereNotNull($f);
-                continue;
-            }
 
-            if (str_ends_with($k, '__between')) {
-                $f = str_replace('__between', '', $k);
-                if (is_array($v) && count($v) === 2) $q->whereBetween($f, [$v[0], $v[1]]);
-                continue;
-            }
-
-            // default exact or whereIn
-            if (is_array($v)) $q->whereIn($k, $v);
-            else if ($v !== null && $v !== '') $q->where($k, $v);
+            $query->where($field, 'like', '%' . $value . '%');
         }
-
-        if (!empty($filters['sort']) && is_array($filters['sort'])) {
-            foreach ($filters['sort'] as $s) {
-                if (is_string($s) && str_starts_with($s, '-')) $q->orderBy(ltrim($s, '-'), 'desc');
-                else $q->orderBy($s, 'asc');
-            }
-        }
-
-        if (!empty($filters['limit'])) $q->limit((int)$filters['limit']);
-        if (!empty($filters['offset'])) $q->offset((int)$filters['offset']);
     }
 }
