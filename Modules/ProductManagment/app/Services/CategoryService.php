@@ -1,6 +1,7 @@
 <?php
 namespace Modules\ProductManagment\Services;
 
+use App\Jobs\SyncModelImagesJob;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use App\Traits\ImageManagement;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\ProductManagment\Jobs\SyncCategoryImagesJob;
+
 use Modules\ProductManagment\Models\Category;
 
 class CategoryService extends BaseService
@@ -58,7 +60,7 @@ class CategoryService extends BaseService
                 foreach ($data['images'] as $file) {
                     $tempPaths[] = $file->store('temp', 'media');
                 }
-                SyncCategoryImagesJob::dispatch(
+                SyncModelImagesJob::dispatch(
                     Category::class,      
                     $category->id,       
                     $tempPaths,           
@@ -69,7 +71,7 @@ class CategoryService extends BaseService
 
             $this->cacheFlush('category');
 
-            return $category->fresh()->load(['parent', 'children']);
+            return $category->load(['parent', 'children']);
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -102,7 +104,7 @@ class CategoryService extends BaseService
                     $tempPaths[] = $file->store('temp', 'media');
                 }
 
-                SyncCategoryImagesJob::dispatch(
+                SyncModelImagesJob::dispatch(
                     Category::class,
                     $category->id,
                     $tempPaths,

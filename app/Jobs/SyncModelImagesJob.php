@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\ProductManagment\Jobs;
+namespace App\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -10,7 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-class SyncCategoryImagesJob implements ShouldQueue
+class SyncModelImagesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -23,6 +23,14 @@ class SyncCategoryImagesJob implements ShouldQueue
     public $tries = 3;
     public $timeout = 120;
 
+    /**
+     * Summary of __construct
+     * @param string $modelClass
+     * @param mixed $modelId
+     * @param array $tempPaths
+     * @param string $collectionName
+     * @param string $disk
+     */
     public function __construct(string $modelClass, $modelId, array $tempPaths, string $collectionName = 'categories', string $disk = 'media')
     {
         $this->modelClass = $modelClass;
@@ -42,7 +50,7 @@ class SyncCategoryImagesJob implements ShouldQueue
         $model = $modelClass::find($this->modelId);
 
         if (!$model) {
-            Log::warning("SyncCategoryImagesJob: model not found {$this->modelClass} id={$this->modelId}");
+            Log::warning("SyncModelImagesJob: model not found {$this->modelClass} id={$this->modelId}");
             return;
         }
 
@@ -51,7 +59,7 @@ class SyncCategoryImagesJob implements ShouldQueue
                 $model->clearMediaCollection($this->collectionName);
             }
         } catch (\Throwable $e) {
-            Log::error("SyncCategoryImagesJob: clearMedia failed: " . $e->getMessage());
+            Log::error("SyncModelImagesJob: clearMedia failed: " . $e->getMessage());
         }
 
         foreach ($this->tempPaths as $path) {
@@ -61,10 +69,10 @@ class SyncCategoryImagesJob implements ShouldQueue
                           ->toMediaCollection($this->collectionName);
                     Storage::disk($this->disk)->delete($path);
                 } else {
-                    Log::warning("SyncCategoryImagesJob: temp file not found on disk {$this->disk}: {$path}");
+                    Log::warning("SyncModelImagesJob: temp file not found on disk {$this->disk}: {$path}");
                 }
             } catch (\Throwable $e) {
-                Log::error("SyncCategoryImagesJob: failed to addMediaFromDisk {$path}: " . $e->getMessage());
+                Log::error("SyncModelImagesJob: failed to addMediaFromDisk {$path}: " . $e->getMessage());
             }
         }
     }
