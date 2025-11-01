@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Modules\ProductManagment\Models\Category;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,5 +20,7 @@ class DatabaseSeeder extends Seeder
             RolesTableSeeder::class,
             AdminTableSeeder::class,
         ]);
+
+        Category::factory(10)->create();
     }
 }
