@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Modules\ProductManagment\Models\Product;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -68,5 +69,15 @@ class User extends Authenticatable
     public function getUpdatedAtAttribute($value)
     {
         return Carbon::parse($value)->format("y-m-d");
+    }
+
+
+    /**
+     * Summary of products
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Product, User>
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'seller_id');
     }
 }

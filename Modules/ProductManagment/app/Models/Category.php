@@ -98,6 +98,15 @@ class Category extends BaseModel implements HasMedia
         return $this->morphMany(Media::class, 'model');
     }
 
+    /**
+     * Summary of products
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Product, Category>
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'category_id');
+    }
+
 
 
 }
