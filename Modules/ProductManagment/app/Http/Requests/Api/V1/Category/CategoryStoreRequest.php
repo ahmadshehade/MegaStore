@@ -15,9 +15,11 @@ class CategoryStoreRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'min:6', 'max:100','unique:categories,name'],
+            'name' => ['required', 'string', 'min:6', 'max:100', 'unique:categories,name'],
             'description' => ['sometimes', 'string', 'min:10', 'max:200'],
             'parent_id' => ['sometimes', 'integer', 'in:categories,id'],
+            'images' => ['sometimes', 'array'],
+            'images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
 
         ];
     }
@@ -34,6 +36,7 @@ class CategoryStoreRequest extends BaseRequest
     public function messages(): array
     {
         return [
+            
             'name.required' => 'The :attribute field is required.',
             'name.string' => 'The :attribute must be a valid string.',
             'name.min' => 'The :attribute must be at least :min characters.',
@@ -45,6 +48,12 @@ class CategoryStoreRequest extends BaseRequest
 
             'parent_id.integer' => 'The :attribute must be a valid integer.',
             'parent_id.exists' => 'The selected :attribute does not exist.',
+
+            'images.array' => 'The :attribute field must be a valid array.',
+            'images.*.file' => 'Each :attribute must be a valid file.',
+            'images.*.image' => 'Each :attribute must be a valid image file.',
+            'images.*.mimes' => 'Each :attribute must be of type: JPG, JPEG, PNG, GIF, or WEBP.',
+            'images.*.max' => 'Each :attribute must not exceed 5MB in size.',
         ];
     }
 
@@ -57,6 +66,8 @@ class CategoryStoreRequest extends BaseRequest
             'name' => 'category name',
             'description' => 'category description',
             'parent_id' => 'parent category',
+            'images' => 'images collection',
+            'images.*' => 'uploaded image file',
         ];
     }
 }

@@ -11,18 +11,22 @@ use Modules\ProductManagment\Models\Category;
 
 class CategoryUpdateRequest extends BaseRequest
 {
-    
+
     /**
      * Get the validation rules that apply to the request.
      */
     public function rules(): array
     {
-         $category = $this->route('category'); 
-        
+        $category = $this->route('category');
+
         return [
             'name' => ['sometimes', 'string', 'min:6', 'max:100', Rule::unique('categories')->ignore($category?->id)],
             'description' => ['sometimes', 'string', 'min:10', 'max:200'],
             'parent_id' => ['sometimes', 'integer', 'in:categories,id'],
+
+            'images' => ['sometimes', 'array'],
+            'images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
+
 
         ];
     }
@@ -50,6 +54,12 @@ class CategoryUpdateRequest extends BaseRequest
 
             'parent_id.integer' => 'The :attribute must be a valid integer.',
             'parent_id.exists' => 'The selected :attribute does not exist.',
+
+            'images.array' => 'The :attribute field must be a valid array.',
+            'images.*.file' => 'Each :attribute must be a valid file.',
+            'images.*.image' => 'Each :attribute must be a valid image file.',
+            'images.*.mimes' => 'Each :attribute must be of type: JPG, JPEG, PNG, GIF, or WEBP.',
+            'images.*.max' => 'Each :attribute must not exceed 5MB in size.',
         ];
     }
 
@@ -62,6 +72,8 @@ class CategoryUpdateRequest extends BaseRequest
             'name' => 'category name',
             'description' => 'category description',
             'parent_id' => 'parent category',
+            'images' => 'images collection',
+            'images.*' => 'uploaded image file',
         ];
     }
 }

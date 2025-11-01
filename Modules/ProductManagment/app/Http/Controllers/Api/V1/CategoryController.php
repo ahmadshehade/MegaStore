@@ -43,6 +43,7 @@ class CategoryController extends Controller
     public function store(CategoryStoreRequest $request)
     {
         $this->authorize('create', Category::class);
+        
         $category = $this->category->store($request->validated());
         return $this->SuccessMessage([
             'category' => $category->load('parent', 'children')
@@ -69,7 +70,7 @@ class CategoryController extends Controller
         $this->authorize('update', $category);
         $data = $this->category->update($request->validated(), $category);
         return $this->SuccessMessage([
-            'category' => $data->load('parent', 'children')
+            'category' => $data->load('parent', 'children','images')
         ], 'Successfully Update Category', 200);
     }
 

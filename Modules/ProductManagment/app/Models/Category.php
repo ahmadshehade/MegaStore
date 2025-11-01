@@ -3,14 +3,19 @@
 namespace Modules\ProductManagment\Models;
 
 use App\Models\BaseModel;
+
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
 // use Modules\ProductManagment\Database\Factories\CategoryFactory;
 
-class Category extends BaseModel
+class Category extends BaseModel implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     /**
      * The attributes that are mass assignable.
@@ -83,8 +88,16 @@ class Category extends BaseModel
      * Summary of newFactory
      * @return CategoryFactory
      */
-    protected  static function newFactory()
+    protected static function newFactory()
     {
         return new CategoryFactory();
     }
+
+    public function images()
+    {
+        return $this->morphMany(Media::class, 'model');
+    }
+
+
+
 }
