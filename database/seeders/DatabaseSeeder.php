@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesTableSeeder::class,
             AdminTableSeeder::class,
+            daysTableSeeder::class,
         ]);
 
         Category::factory(10)->create();

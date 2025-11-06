@@ -1,4 +1,5 @@
 {
     "ProductManagment": true,
-    "PaymentManagement": true
+    "PaymentManagement": true,
+    "OrderManagement": true
 }
