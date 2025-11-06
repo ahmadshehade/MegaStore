@@ -1,18 +1,22 @@
 <?php
 
-namespace Modules\ProductManagment\Policies;
+namespace Modules\PaymentManagement\Policies;
 
 use App\Enum\UserRoles;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Modules\ProductManagment\Models\Category;
+use Modules\PaymentManagement\Models\PaymentMethod;
 
-class CategoryPolicy
+class PaymentMethodPolicy
 {
     use HandlesAuthorization;
 
+
+
     /**
-     * Create a new policy instance.
+     * Summary of before
+     * @param \App\Models\User $user
+     *
      */
     public function before(User $user)
     {
@@ -20,54 +24,54 @@ class CategoryPolicy
             return true;
         }
     }
-
     /**
-     * Summary of viewAny
+     * Summary of viewAll
      * @param \App\Models\User $user
      * @return bool
      */
     public function viewAny(User $user)
     {
+
         return $user->hasAnyRole([
-            UserRoles::Seller->value,
             UserRoles::User->value,
-            UserRoles::Customer->value
+            UserRoles::Seller->value,
+            UserRoles::Customer->value,
+
         ]);
     }
-
-
     /**
      * Summary of view
      * @param \App\Models\User $user
-     * @param \Modules\ProductManagment\Models\Category $category
+     * @param \Modules\PaymentManagement\Models\PaymentMethod $paymentMethod
      * @return bool
      */
-    public function view(User $user, Category $category)
+    public function view(User $user, PaymentMethod $paymentMethod)
     {
         return $user->hasAnyRole([
-            UserRoles::Seller->value,
             UserRoles::User->value,
-            UserRoles::Customer->value
+            UserRoles::Seller->value,
+            UserRoles::Customer->value,
+
         ]);
     }
 
     /**
      * Summary of create
      * @param \App\Models\User $user
-     * @return void
+     * @return bool
      */
     public function create(User $user)
     {
-        //
+        return false;
     }
 
     /**
      * Summary of update
      * @param \App\Models\User $user
-     * @param \Modules\ProductManagment\Models\Category $category
+     * @param \Modules\PaymentManagement\Models\PaymentMethod $paymentMethod
      * @return bool
-         */
-    public function update(User $user, Category $category)
+     */
+    public function update(User $user, PaymentMethod $paymentMethod)
     {
         return false;
     }
@@ -75,10 +79,10 @@ class CategoryPolicy
     /**
      * Summary of delete
      * @param \App\Models\User $user
-     * @param \Modules\ProductManagment\Models\Category $category
+     * @param \Modules\PaymentManagement\Models\PaymentMethod $paymentMethod
      * @return bool
      */
-    public function delete(User $user, Category $category)
+    public function delete(User $user, PaymentMethod $paymentMethod)
     {
         return false;
     }
@@ -86,10 +90,10 @@ class CategoryPolicy
     /**
      * Summary of restore
      * @param \App\Models\User $user
-     * @param \Modules\ProductManagment\Models\Category $category
+     * @param \Modules\PaymentManagement\Models\PaymentMethod $paymentMethod
      * @return bool
      */
-    public function restore(User $user, Category $category)
+    public function restore(User $user, PaymentMethod $paymentMethod)
     {
         return false;
     }
@@ -97,10 +101,10 @@ class CategoryPolicy
     /**
      * Summary of forceDelete
      * @param \App\Models\User $user
-     * @param \Modules\ProductManagment\Models\Category $category
+     * @param \Modules\PaymentManagement\Models\PaymentMethod $paymentMethod
      * @return bool
      */
-    public function forceDelete(User $user, Category $category)
+    public function forceDelete(User $user, PaymentMethod $paymentMethod)
     {
         return false;
     }

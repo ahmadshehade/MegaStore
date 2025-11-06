@@ -5,10 +5,11 @@ namespace Modules\ProductManagment\Policies;
 use App\Enum\UserRoles;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Modules\ProductManagment\Models\Category;
+use Modules\ProductManagment\Models\Product;
 
-class CategoryPolicy
+class ProductPolicy
 {
+
     use HandlesAuthorization;
 
     /**
@@ -42,7 +43,7 @@ class CategoryPolicy
      * @param \Modules\ProductManagment\Models\Category $category
      * @return bool
      */
-    public function view(User $user, Category $category)
+    public function view(User $user, Product $product)
     {
         return $user->hasAnyRole([
             UserRoles::Seller->value,
@@ -54,11 +55,11 @@ class CategoryPolicy
     /**
      * Summary of create
      * @param \App\Models\User $user
-     * @return void
+     * @return bool
      */
     public function create(User $user)
     {
-        //
+        return $user->hasRole(UserRoles::Seller->value);
     }
 
     /**
@@ -66,10 +67,11 @@ class CategoryPolicy
      * @param \App\Models\User $user
      * @param \Modules\ProductManagment\Models\Category $category
      * @return bool
-         */
-    public function update(User $user, Category $category)
+     */
+    public function update(User $user, Product $product)
     {
-        return false;
+        return ($user->hasRole(UserRoles::Seller->value) &&
+            $product->seller_id = $user->id);
     }
 
     /**
@@ -78,9 +80,10 @@ class CategoryPolicy
      * @param \Modules\ProductManagment\Models\Category $category
      * @return bool
      */
-    public function delete(User $user, Category $category)
+    public function delete(User $user, Product $product)
     {
-        return false;
+        return ($user->hasRole(UserRoles::Seller->value) &&
+            $product->seller_id = $user->id);
     }
 
     /**
@@ -89,7 +92,7 @@ class CategoryPolicy
      * @param \Modules\ProductManagment\Models\Category $category
      * @return bool
      */
-    public function restore(User $user, Category $category)
+    public function restore(User $user, Product $product)
     {
         return false;
     }
@@ -100,8 +103,9 @@ class CategoryPolicy
      * @param \Modules\ProductManagment\Models\Category $category
      * @return bool
      */
-    public function forceDelete(User $user, Category $category)
+    public function forceDelete(User $user, Product $product)
     {
         return false;
     }
+
 }

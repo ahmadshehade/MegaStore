@@ -61,12 +61,12 @@ class CategoryService extends BaseService
                     $tempPaths[] = $file->store('temp', 'media');
                 }
                 SyncModelImagesJob::dispatch(
-                    Category::class,      
-                    $category->id,       
-                    $tempPaths,           
-                    'categories',         
-                    'media'               
-                )->onQueue('media'); 
+                    Category::class,
+                    $category->id,
+                    $tempPaths,
+                    'categories',
+                    'media'
+                )->onQueue('media');
             }
 
             $this->cacheFlush('category');

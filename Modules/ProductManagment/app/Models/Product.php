@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 // use Modules\ProductManagment\Database\Factories\ProductFactory;
 
@@ -81,12 +82,19 @@ class Product extends BaseModel implements HasMedia
     }
 
 
+    /**
+     * Summary of images
+     * @return \Illuminate\Database\Eloquent\Relations\MorphMany<Media, Product>
+     */
+    public function images(){
+        return $this->morphMany(Media::class,'model');
+    }
 
 
 
 
 
-    
+
     // protected static function newFactory(): ProductFactory
     // {
     //     // return ProductFactory::new();
