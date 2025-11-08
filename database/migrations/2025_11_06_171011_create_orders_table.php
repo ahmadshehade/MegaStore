@@ -12,22 +12,23 @@ return new class extends Migration {
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            // $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            // $table->foreignId('paymen_method_id')->constrained('payment_methods')->cascadeOnDelete();
-            // $table->enum('status', [
-            //     'pending',
-            //     'paid',
-            //     'processing',
-            //     'shipped',
-            //     'completed',
-            //     'cancelled',
-            //     'refunded'
-            // ])->default('pending');
-            // $table->decimal('tot_amount',10,2)->default(0);
-            // $table->text('notes')->nullable();
-            // $table->
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('payment_method_id')->constrained('payment_methods')->cascadeOnDelete();
+            $table->enum('status', [
+                'pending',
+                'paid',
+                'processing',
+                'shipped',
+                'completed',
+                'cancelled',
+                'refunded'
+            ])->default('pending');
+            $table->decimal('tot_amount', 10, 2)->default(0);
+            $table->text('notes')->nullable();
+            $table->foreignId('shipping_id')->constrained('shippings')
+                ->onDelete('cascade');
             $table->timestamps();
-            // الشحن
+
         });
     }
 

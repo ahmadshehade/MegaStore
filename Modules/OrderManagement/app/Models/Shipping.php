@@ -4,6 +4,7 @@ namespace Modules\OrderManagement\Models;
 
 use App\Models\BaseModel;
 use App\Models\Day;
+use Database\Factories\ShippingFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
@@ -71,8 +72,16 @@ class Shipping extends BaseModel implements HasMedia
 
 
 
-    // protected static function newFactory(): ShippingFactory
-    // {
-    //     // return ShippingFactory::new();
-    // }
+    /**
+     * Summary of newFactory
+     * @return ShippingFactory
+     */
+    protected static function newFactory(){
+        return ShippingFactory::new();
+    }
+
+
+    public function orders(){
+        return $this->hasMany(Order::class,'shipping_id');
+    }
 }

@@ -5,6 +5,7 @@ namespace Modules\PaymentManagement\Models;
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Modules\OrderManagement\Models\Order;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -67,6 +68,14 @@ class PaymentMethod extends BaseModel implements HasMedia
      */
     public  function image(){
         return $this->morphOne(Media::class,'model');
+    }
+
+    /**
+     * Summary of Orders
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Order, PaymentMethod>
+     */
+    public function Orders(){
+        return $this->hasMany(Order::class,'payment_method_id');
     }
 
 

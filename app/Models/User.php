@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Modules\OrderManagement\Models\Order;
 use Modules\ProductManagment\Models\Product;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -79,5 +80,13 @@ class User extends Authenticatable
     public function products()
     {
         return $this->hasMany(Product::class, 'seller_id');
+    }
+
+    /**
+     * Summary of orders
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Order, User>
+     */
+    public function orders(){
+        return $this->hasMany(Order::class,'user_id');
     }
 }
