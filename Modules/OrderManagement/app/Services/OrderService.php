@@ -2,9 +2,11 @@
 
 namespace Modules\OrderManagement\Services;
 
+use App\Enum\UserRoles;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use Exception;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -50,84 +52,77 @@ class OrderService extends BaseService
         });
     }
 
-
     /**
      * Summary of store
      * @param array $data
+     * @throws \Illuminate\Auth\AuthenticationException
+     * @throws \Exception
      * @return \Illuminate\Database\Eloquent\Model
      */
     public function store(array $data): Model
     {
-        return DB::transaction(function () use ($data) {
+        try {
+            /**
+             * @var /App/Models/User as $user
+             */
+            $user = Auth::user();
+            if (isset($data['status'])) {
 
-            $orderPayload = [
-                'user_id' => Auth::user()->id,
+                if ($user->hasRole(UserRoles::SuperAdmin->value)) {
+                    $payloadOrder['status'] = $data['status'];
+                } else {
+                    throw new AuthenticationException('Un Authorize To Add Status To Order .');
+                }
+
+            }
+            $payloadOrder = [
+                'user_id' => $user->id,
                 'payment_method_id' => $data['payment_method_id'],
                 'shipping_id' => $data['shipping_id'],
                 'notes' => $data['notes'],
                 'tot_amount' => 0,
-                'status' => $data['status'] ?? 'pending',
             ];
-
-            if (empty($orderPayload['user_id']) || empty($orderPayload['payment_method_id']) || empty($orderPayload['shipping_id'])) {
-                throw ValidationException::withMessages(['order' => 'Missing required order fields.']);
-            }
-
-            $order = parent::store($orderPayload);
-
-            if (!empty($data['items']) && is_array($data['items'])) {
+            return DB::transaction(function () use ($payloadOrder, $data) {
+                $order = parent::store($payloadOrder);
                 $items = $data['items'];
-            } elseif (!empty($data['product_id']) && isset($data['quantity'])) {
-                $items = [
-                    ['product_id' => $data['product_id'], 'quantity' => (int) $data['quantity']]
-                ];
-            } else {
-                throw ValidationException::withMessages(['items' => 'No order items provided.']);
-            }
-
-            $orderTotal = '0.00';
-
-            foreach ($items as $index => $it) {
-                $productId = $it['product_id'] ?? null;
-                $qty = isset($it['quantity']) ? (int) $it['quantity'] : 0;
-                if (!$productId || $qty <= 0) {
-                    throw ValidationException::withMessages(["items.$index" => 'Invalid product_id or quantity.']);
+                if (empty($items)) {
+                    throw new Exception('No order items provided.');
                 }
-                $product = Product::where('id', $productId)->lockForUpdate()->first();
-                if (!$product) {
-                    throw (new ModelNotFoundException)->setModel(Product::class, $productId);
-                }
-                $available = $product->stock ?? $product->stack ?? 0;
+                $orderTotal = 0.00;
 
-                if ($available < $qty) {
-                    throw ValidationException::withMessages([
-                        "items.$index.quantity" => "Not enough stock for product {$productId}. Available: {$available}"
+                foreach ($items as $index => $item) {
+                    $productId = $item['product_id'];
+                    $quantity = $item['quantity'];
+                    if (!$productId || $quantity <= 0) {
+                        throw new Exception("Invalid product_id or quantity at item index {$index}");
+                    }
+                    $product = Product::where('id', $productId)->lockForUpdate()->firstOrFail();
+                    if ($product->stock < $quantity) {
+                        throw new Exception("Insufficient stock for product {$productId}");
+                    }
+                    $product->decrement("stock", $quantity);
+                    $lineTotal = bcmul((string) $product->price, (string) $quantity, 2);
+                    $orderItem = OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'price' => $product->price,
+                        'total' => $lineTotal,
                     ]);
+                    $orderTotal = bcadd((string) $orderTotal, (string) $lineTotal, 2);
                 }
-                $price = $product->price;
-                $lineTotal = bcmul((string) $price, (string) $qty, 2);
-                $order->items()->create([
-                    'product_id' => $product->id,
-                    'price' => $price,
-                    'quantity' => $qty,
-                    'total' => $lineTotal,
-                ]);
-                if (property_exists($product, 'stock') || isset($product->stock)) {
-                    $product->decrement('stock', $qty);
-                } else {
-                    $product->decrement('stack', $qty);
-                }
-
-                $orderTotal = bcadd((string) $orderTotal, (string) $lineTotal, 2);
-            }
-
-            $order->update(['tot_amount' => $orderTotal]);
-
-            $this->cacheFlush('orders');
-
-            return $order->load('items.product');
-        }, 5);
+                $order->update(['tot_amount' => $orderTotal]);
+                 $this->cacheFlush('orders');
+                return $order->load('items.product');
+            }, 5);
+        } catch (Exception $e) {
+            Log::error("Fail To Make Order " . $e->getMessage());
+            throw new Exception("Fail To Make Order " . $e->getMessage());
+        }
     }
+
+
+
     /**
      * Summary of get
      * @param mixed $order
@@ -135,103 +130,84 @@ class OrderService extends BaseService
      */
     public function get(Model $order): Model
     {
-        return $order->load(['items', 'shipping', 'paymetMethod']);
+        return $order->load(['items', 'shipping', 'paymetMethod', 'user']);
     }
 
 
     /**
      * Summary of update
      * @param array $data
-     * @param \Illuminate\Database\Eloquent\Model $order
+     * @param mixed $order
+     * @throws \Illuminate\Http\Exceptions\HttpResponseException
+     * @throws \Exception
      * @return \Illuminate\Database\Eloquent\Model
      */
-    public function update(array $data, Model $order): Model
+    public function update(array $data, $order): Model
     {
-        return DB::transaction(function () use ($data, $order) {
-            $existingItems = $order->items()->get();
+        try {
             $orderPayload = [
                 'payment_method_id' => $data['payment_method_id'] ?? $order->payment_method_id,
                 'shipping_id' => $data['shipping_id'] ?? $order->shipping_id,
                 'notes' => $data['notes'] ?? $order->notes,
-                'status' => $data['status'] ?? $order->status,
+                'tot_amount'=>$order->tot_amount,
             ];
-            $order = parent::update($orderPayload, $order);
-            if (!array_key_exists('items', $data)) {
-                $orderTotal = '0.00';
-                foreach ($existingItems as $ei) {
-                    $orderTotal = bcadd((string) $orderTotal, (string) $ei->total, 2);
-                }
-                $order->update(['tot_amount' => $orderTotal]);
-                return $order->load('items.product');
-            }
-            $items = $data['items'];
-            if (!is_array($items)) {
-                throw ValidationException::withMessages(['items' => 'Items must be an array.']);
-            }
-            $existingProductIds = $existingItems->pluck('product_id')->unique()->values()->all();
-            if (!empty($existingProductIds)) {
-                $productsMap = Product::whereIn('id', $existingProductIds)->lockForUpdate()->get()->keyBy('id');
-                foreach ($existingItems as $ei) {
-                    $prod = $productsMap->get($ei->product_id);
-                    if ($prod) {
-                        if (isset($prod->stock) || property_exists($prod, 'stock')) {
-                            $prod->increment('stock', $ei->quantity);
-                        } else {
-                            $prod->increment('stack', $ei->quantity);
-                        }
-                    }
-                }
-            }
-            $order->items()->delete();
-            if (empty($items)) {
-                $order->update(['tot_amount' => '0.00']);
-                return $order->load('items.product');
-            }
-            $newProductIds = collect($items)->pluck('product_id')->unique()->values()->all();
-            $products = Product::whereIn('id', $newProductIds)->lockForUpdate()->get()->keyBy('id');
-            $orderTotal = '0.00';
-            foreach ($items as $index => $it) {
-                $productId = $it['product_id'] ?? null;
-                $qty = isset($it['quantity']) ? (int) $it['quantity'] : 0;
 
-                if (!$productId || $qty <= 0) {
-                    throw ValidationException::withMessages(["items.$index" => 'Invalid product_id or quantity.']);
-                }
-                $product = $products->get($productId);
-                if (!$product) {
-                    throw (new ModelNotFoundException)->setModel(Product::class, $productId);
-                }
-                $available = $product->stock ?? $product->stack ?? 0;
-                if ($available < $qty) {
-                    throw ValidationException::withMessages([
-                        "items.$index.quantity" => "Not enough stock for product {$productId}. Available: {$available}"
-                    ]);
-                }
-                $price = $product->price;
-                $lineTotal = bcmul((string) $price, (string) $qty, 2);
-
-                $order->items()->create([
-                    'product_id' => $product->id,
-                    'price' => $price,
-                    'quantity' => $qty,
-                    'total' => $lineTotal,
-                ]);
-
-                if (isset($product->stock) || property_exists($product, 'stock')) {
-                    $product->decrement('stock', $qty);
+            if (!empty($data['status'])) {
+                /**
+                 * @var /App/Models/User as $user
+                 */
+                $user = Auth::user();
+                if ($user->hasRole(UserRoles::SuperAdmin->value)) {
+                    $orderPayload['status'] = $data['status'];
                 } else {
-                    $product->decrement('stack', $qty);
+                    throw new HttpResponseException(response()
+                        ->json([
+                            'message' => 'Not Authorize .'
+                        ], 403));
                 }
-
-                $orderTotal = bcadd((string) $orderTotal, (string) $lineTotal, 2);
             }
+            return DB::transaction(function () use ($data, $orderPayload, $order) {
+                $newOrder = parent::update($data, $order);
+                if (isset($data['items'])) {
+                    $oldItems = $order->items()->get();
+                    foreach ($oldItems as $item) {
+                        $product = Product::where('id', $item->product_id)->LockForUpdate()->firstOrFail();
+                        $oldLineQuiantitiy = $item->quantity;
+                        $product->increment('stock', $oldLineQuiantitiy);
+                        $item->delete();
+                    }
 
-
-            $order->update(['tot_amount' => $orderTotal]);
-
-            $this->cacheFlush('orders');
-            return $order->load('items.product');
-        }, 5);
+                    $newItems = $data['items'];
+                    $tot_amount = 0.00;
+                    foreach ($newItems as $index => $item) {
+                        $productId = $item['product_id'];
+                        $quantity = $item['quantity'];
+                        if (!$productId || $quantity <= 0) {
+                            throw new Exception("Invalid product_id or quantity at item index {$index}");
+                        }
+                        $product = Product::where('id', $productId)->lockForUpdate()->firstOrFail();
+                        if ($product->stock < $quantity) {
+                            throw new Exception("Insufficient stock for product {$productId}");
+                        }
+                        $product->decrement("stock", $quantity);
+                        $lineTotal = bcmul((string) $product->price, (string) $quantity, 2);
+                        $newOrder->items()->create([
+                            'product_id' => $item['product_id'],
+                            'quantity' => $item['quantity'],
+                            'price' => $product->price,
+                            'total' => $lineTotal,
+                        ]);
+                        $tot_amount = bcadd((string) $tot_amount, (string) $lineTotal, 2);
+                    }
+                    $order->update(['tot_amount' => $tot_amount]);
+                }
+                $this->cacheFlush('orders');
+                return $order->load('items.product');
+            }, 5);
+        } catch (Exception $e) {
+            Log::error("Fail To Update Order " . $e->getMessage());
+            throw new Exception("Fail To Update Order " . $e->getMessage());
+        }
     }
 
 
@@ -258,21 +234,18 @@ class OrderService extends BaseService
                     if (isset($product->stock) || property_exists($product, 'stock')) {
                         $product->increment('stock', (int) $item->quantity);
                     } else {
-                        $product->increment('stack', (int) $item->quantity);
+                        $product->increment('stock', (int) $item->quantity);
                     }
                 }
                 $order->items()->delete();
             }
 
-            $deleted = $order->delete();
+            $deleted = parent::destroy($order);
             if (!$deleted) {
                 throw new Exception('Failed to delete order.');
             }
-           $this->cacheFlush('orders');
+            $this->cacheFlush('orders');
             return true;
         }, 5);
-
     }
-
-
 }
