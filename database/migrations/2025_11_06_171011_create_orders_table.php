@@ -27,6 +27,8 @@ return new class extends Migration {
             $table->text('notes')->nullable();
             $table->foreignId('shipping_id')->constrained('shippings')
                 ->onDelete('cascade');
+            $table->foreignId('address-id')->constrained('addresses')
+                ->onDelete('cascade');
             $table->timestamps();
 
         });
