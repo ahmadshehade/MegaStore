@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Adress\AddressController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\RolesAndPermisssions\PermissionController;
 use App\Http\Controllers\Api\V1\RolesAndPermisssions\RoleController;
@@ -52,4 +53,18 @@ Route::middleware(['auth:sanctum', 'can:admin-job'])
         Route::get('/get-user/{user}',[UserController::class,'show'])->name('get.user');
         Route::post('/update/user/{user}',[UserController::class,'update'])->name('update.user');
         Route::delete('/delete/user/{user}',[UserController::class,'destroy'])->name('delete.user');
+    });
+
+
+
+    /**
+     *  AddressController
+     */
+    Route::prefix('/v1/addresses')->middleware(['auth:sanctum'])->group(function(){
+
+        Route::get('/',[AddressController::class,'index'])->name('address.all');
+        Route::post('/',[AddressController::class,'store'])->name('address.store');
+        Route::get('/{address}',[AddressController::class,'show'])->name('address.show');
+        Route::put('/{address}',[AddressController::class,'update'])->name('address.update');
+        Route::delete('/{address}',[AddressController::class,'destroy'])->name('adddress.destroy');
     });

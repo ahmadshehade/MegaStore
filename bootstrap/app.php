@@ -1,8 +1,12 @@
 <?php
 
+use App\Exceptions\CrudException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,5 +19,23 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            
+            if ($e instanceof CrudException) {
+                $status = $e->getCode() >= 100 && $e->getCode() < 600 ? $e->getCode() : 400;
+                $message = $e->getMessage();
+            } elseif ($e instanceof ModelNotFoundException || $e instanceof NotFoundHttpException) {
+                $status = 404;
+                $message = 'Resource not found';
+            } else {
+                $status = $e->getCode() >= 100 && $e->getCode() < 600 ? $e->getCode() : 500;
+                $message = $e->getMessage() ?: 'Server Error';
+            }
+
+            return response()->json([
+                'message' => $message,
+            ], $status);
+        });
+
     })->create();

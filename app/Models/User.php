@@ -89,4 +89,12 @@ class User extends Authenticatable
     public function orders(){
         return $this->hasMany(Order::class,'user_id');
     }
+
+     /**
+      * Summary of addreses
+      * @return \Illuminate\Database\Eloquent\Relations\HasMany<Address, User>
+      */
+     public function addreses(){
+        return $this->hasMany(Address::class,'user_id');
+     }
 }
