@@ -42,6 +42,8 @@ class UpdateOrderRequest extends FormRequest
             'items' => ['sometimes', 'required', 'array', 'min:1'],
             'items.*.product_id' => ['required_with:items', 'exists:products,id'],
             'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
+             'address_id'=>['integer','exists:addresses,id']
+
         ];
     }
 
@@ -58,6 +60,8 @@ class UpdateOrderRequest extends FormRequest
             'items' => 'order items',
             'items.*.product_id' => 'product',
             'items.*.quantity' => 'product quantity',
+            'address_id'=>'Address'
+
         ];
     }
 
@@ -74,6 +78,7 @@ class UpdateOrderRequest extends FormRequest
             'min.array' => 'The :attribute must have at least :min item(s).',
             'min.numeric' => 'The :attribute must be at least :min.',
             'max' => 'The :attribute may not be greater than :max characters.',
+            'integer'=>'The :attribute must be integer .'
         ];
     }
 }

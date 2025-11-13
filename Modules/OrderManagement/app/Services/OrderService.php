@@ -81,6 +81,7 @@ class OrderService extends BaseService
                 'shipping_id' => $data['shipping_id'],
                 'notes' => $data['notes'],
                 'tot_amount' => 0,
+                'address_id'=>$data['address_id'],
             ];
             return DB::transaction(function () use ($payloadOrder, $data) {
                 $order = parent::store($payloadOrder);
@@ -113,7 +114,7 @@ class OrderService extends BaseService
                 }
                 $order->update(['tot_amount' => $orderTotal]);
                  $this->cacheFlush('orders');
-                return $order->load('items.product');
+                return $order->load(['items.product','address']);
             }, 5);
         } catch (Exception $e) {
             Log::error("Fail To Make Order " . $e->getMessage());
@@ -130,7 +131,7 @@ class OrderService extends BaseService
      */
     public function get(Model $order): Model
     {
-        return $order->load(['items', 'shipping', 'paymetMethod', 'user']);
+        return $order->load(['items', 'shipping', 'paymetMethod', 'user','address']);
     }
 
 
@@ -202,7 +203,7 @@ class OrderService extends BaseService
                     $order->update(['tot_amount' => $tot_amount]);
                 }
                 $this->cacheFlush('orders');
-                return $order->load('items.product');
+                return $order->load('items.product','address');
             }, 5);
         } catch (Exception $e) {
             Log::error("Fail To Update Order " . $e->getMessage());

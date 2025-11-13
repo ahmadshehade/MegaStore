@@ -24,6 +24,8 @@ class StoreOrderRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+
+            'address_id'=>['required','integer','exists:addresses,id']
         ];
     }
 
@@ -50,6 +52,7 @@ class StoreOrderRequest extends FormRequest
             'items' => 'order items',
             'items.*.product_id' => 'product',
             'items.*.quantity' => 'product quantity',
+            'address_id'=>'Address'
         ];
     }
 
@@ -68,7 +71,8 @@ class StoreOrderRequest extends FormRequest
                 'numeric' => 'The :attribute must be at least :min.',
             ],
             'max' => 'The :attribute may not be greater than :max characters.',
-            'required_with' => 'The :attribute field is required when :values is present.',
+
+            'integer'=>'The :attribute must be integer .'
         ];
     }
 

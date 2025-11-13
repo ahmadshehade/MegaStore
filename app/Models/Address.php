@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Modules\OrderManagement\Models\Order;
 
 class Address extends BaseModel
 {
@@ -26,5 +27,14 @@ class Address extends BaseModel
      */
     public function user(){
         return $this->belongsTo(User::class,'user_id');
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @return void
+     */
+    public function orders(){
+        return $this->hasMany(Order::class,'address_id');
     }
 }

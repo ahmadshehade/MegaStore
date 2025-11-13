@@ -3,6 +3,7 @@
 namespace Modules\OrderManagement\Models;
 
 use App\Enum\UserRoles;
+use App\Models\Address;
 use App\Models\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,7 +22,7 @@ class Order extends BaseModel
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = ['user_id', 'payment_method_id', 'status', 'tot_amount', 'notes', 'shipping_id'];
+    protected $fillable = ['user_id', 'payment_method_id', 'status', 'tot_amount', 'notes', 'shipping_id','address_id'];
 
     // protected static function newFactory(): OrderFactory
     // {
@@ -109,5 +110,17 @@ class Order extends BaseModel
                 return;
             }
         });
+    }
+
+
+
+    /**
+     *
+     * Undocumented function
+     *
+     * @return void
+     */
+    public function address(){
+        return $this->belongsTo(Address::class,'address_id');
     }
 }
