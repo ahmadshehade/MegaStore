@@ -15,7 +15,6 @@ class PaymentMethodService extends BaseService
 
     public function __construct(PaymentMethod $model)
     {
-        // لا ترجع قيمة من الكونستركتور
         parent::__construct($model);
     }
 
@@ -25,12 +24,17 @@ class PaymentMethodService extends BaseService
         $userKey = $user ? $user->id . '-' . implode('-', $user->roles->pluck('name')->toArray()) : 'guest';
         $cacheKey = "paymentMethod_" . $userKey . (empty($filters) ? "" : md5(json_encode($filters)));
 
-        // تصحيح مدة التخزين
+
         return Cache::tags(['paymentMethods'])->remember($cacheKey, now()->addMonths(2), function () use ($filters) {
             return parent::getAll($filters);
         });
     }
 
+    /**
+     * Summary of store
+     * @param array $data
+     * @return Model
+     */
     public function store(array $data): Model
     {
         $paymentMethod = parent::store($data);
@@ -38,6 +42,11 @@ class PaymentMethodService extends BaseService
         return $paymentMethod;
     }
 
+    /**
+     * Summary of get
+     * @param Model $model
+     * @return Model
+     */
     public function get(Model $model): Model
     {
         return parent::get($model);
@@ -49,6 +58,11 @@ class PaymentMethodService extends BaseService
         return parent::update($data, $model);
     }
 
+    /**
+     * Summary of destroy
+     * @param Model $model
+     * @return bool
+     */
     public function destroy(Model $model): bool
     {
         $this->cacheFlush('paymentMethods');

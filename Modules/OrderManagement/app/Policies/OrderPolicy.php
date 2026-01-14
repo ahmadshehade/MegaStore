@@ -79,7 +79,7 @@ class OrderPolicy
         if ($user->id !== $order->customer_id) {
             return false;
         }
-        return !$order->invoice || $order->invoice->status === 'issued';
+        return !$order->invoice || $order->invoice->status === 'pending';
     }
 
 
@@ -97,7 +97,7 @@ class OrderPolicy
         if ($user->id !== $order->customer_id) {
             return false;
         }
-        return !$order->invoice || $order->invoice->status === 'issued';
+        return !$order->invoice || $order->invoice->status === 'pending';
     }
     /**
      * Summary of restore

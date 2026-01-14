@@ -14,9 +14,11 @@ use Modules\PaymentManagement\Models\Invoice;
 
 class InvoiceService extends BaseService
 {
-    public function __construct(Invoice $model)
+    protected $ledgerEntry;
+    public function __construct(Invoice $model,LedgerEntryService $ledgerEntry)
     {
         parent::__construct($model);
+        $this->ledgerEntry = $ledgerEntry;
     }
 
     /**
@@ -148,13 +150,11 @@ class InvoiceService extends BaseService
         if ($invoice->status === 'paid') {
             throw new Exception('Cannot update a paid invoice', 422);
         }
+        $payments=$invoice->payments()->get();
         $invoice->update([
             'status' => 'revised',
         ]);
-
-        $invoice->delete();
-
-        return parent::store([
+        $newInvoice= parent::store([
             'order_id'           => $order->id,
             'parent_invoice_id'  => $invoice->id,
             'invoice_number'     => $this->generateInvoiceNumber(),
@@ -162,6 +162,16 @@ class InvoiceService extends BaseService
             'status'             => 'issued',
             'issued_at'          => now(),
         ]);
+        foreach($payments  as $payment){
+            $payment->update([
+                'invoice_id'=>$newInvoice->id
+            ]);
+            $this->ledgerEntry->revisePaymentEntry($payment,$newInvoice->id);
+        }
+        $invoice->delete();
+
+         return $newInvoice;
+
     }
 
     /**

@@ -170,17 +170,46 @@ class LedgerEntryService extends BaseService
 
 
 
-    public function createPaymentEntry($payment): LedgerEntry{
+    public function createPaymentEntry($payment): LedgerEntry
+    {
 
 
-     return LedgerEntry::create([
+        return LedgerEntry::create([
             'order_id'   => $payment->invoice->order->id,
             'invoice_id' => $payment->invoice->id,
+            'payment_id' => $payment->id,
             'entry_type' => 'payment',
             'debit'      => 0.00,
             'credit'     => $payment->amount,
             'description' => 'Payment issued',
         ]);
+    }
 
+
+    public function revisePaymentEntry($payment, $newInvoiceId): array
+    {
+        $ledgerEntries = [];
+
+        $ledgerEntries[] = LedgerEntry::create([
+            'order_id'    => $payment->invoice->order->id,
+            'invoice_id'  => $payment->invoice->id,
+            'payment_id'  => $payment->id,
+            'entry_type'  => 'payment_reversal',
+            'debit'       => $payment->amount,
+            'credit'      => 0.00,
+            'description' => "Transfer Payment to Invoice #{$newInvoiceId}",
+        ]);
+
+        $ledgerEntries[] = LedgerEntry::create([
+            'order_id'    => $payment->invoice->order->id,
+            'invoice_id'  => $newInvoiceId,
+            'payment_id'  => $payment->id,
+            'entry_type'  => 'payment',
+            'debit'       => 0.00,
+            'credit'      => $payment->amount,
+            'description' => "Payment issued (transferred from Invoice #{$payment->invoice->id})",
+        ]);
+
+        return $ledgerEntries;
     }
 }

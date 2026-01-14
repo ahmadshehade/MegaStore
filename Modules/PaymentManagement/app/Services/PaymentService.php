@@ -124,35 +124,5 @@ class PaymentService extends BaseService
 
 
 
-    // public function MakeRefund(Model $payment): Model
-    // {
-    //     return DB::transaction(function () use ($payment) {
-    //         if ($payment->refunds()->exists()) {
-    //             throw new HttpResponseException(
-    //                 response()->json([
-    //                     'message' => 'Payment already refunded'
-    //                 ], 409)
-    //             );
-    //         }
-    //         $refund = Refund::create([
-    //             'invoice_id'=>$payment->invoice->id,
-    //             'payment_id'  => $payment->id,
-    //             'amount'      => $payment->amount,
-    //             'refund_date' => now(),
-    //             'reason'      => 'Payment reversed by admin',
-    //         ]);
-    //         LedgerEntry::create([
-    //             'refund_id'   => $refund->id,
-    //             'payment_id'  => $payment->id,
-    //             'invoice_id'  => $payment->invoice_id,
-    //             'debit'       => (string) $payment->amount,
-    //             'credit'      => '0.00',
-    //             'description' => 'Refund for payment #' . $payment->id,
-    //             'entry_date'  => now(),
-    //         ]);
-    //         $payment->delete();
-    //         $this->cacheFlush('payments');
-    //         return $payment->load('refunds');
-    //     });
-    // }
+    
 }
