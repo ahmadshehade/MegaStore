@@ -3,6 +3,8 @@
 
 namespace Modules\OrderManagement\Services;
 
+use App\Enum\UserRoles;
+use App\Models\User;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use Illuminate\Database\Eloquent\Model;
@@ -11,10 +13,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Notification;
+use Modules\OrderManagement\Notifications\OrderCreatedNotification;
 use Modules\OrderManagement\DataTransferObjects\OrderItemProcessor;
 use Modules\OrderManagement\Models\Order;
-use Modules\PaymentManagement\Models\LedgerEntry;
 use Modules\PaymentManagement\Services\InvoiceService;
 use Modules\PaymentManagement\Services\LedgerEntryService;
 use Throwable;
@@ -25,6 +27,7 @@ class OrderService extends BaseService
     protected $makeTotAmount;
     protected $invoice;
     protected $ledgerEntry;
+
     /**
      * Summary of __construct
      * @param Order $model
@@ -79,8 +82,13 @@ class OrderService extends BaseService
             }
             $invoice = $this->invoice->makeInvoice($order);
             $this->ledgerEntry->createInvoiceEntry($invoice);
+            $admins=User::admins()->get();
+
+
             return $order->load(['items', 'discounts', 'invoice', 'ledgerEntries']);
         });
+      
+
     }
 
 

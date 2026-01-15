@@ -3,11 +3,16 @@
 namespace Modules\OrderManagement\Http\Controllers\Api\V1\Order;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 use Modules\OrderManagement\Http\Requests\Api\V1\Orders\StoreOrderRequest;
 use Modules\OrderManagement\Http\Requests\Api\V1\Orders\UpdateOrderRequest;
 use Modules\OrderManagement\Models\Order;
+use Modules\OrderManagement\Notifications\OrderCreatedNotification;
+use Modules\OrderManagement\Notifications\OrderUpdateNotification;
 use Modules\OrderManagement\Services\OrderService;
 
 class OrderController extends Controller
@@ -50,6 +55,8 @@ class OrderController extends Controller
     {
         $this->authorize('create', Order::class);
         $order = $this->orderService->store($request->validated());
+        $admins = User::admins()->get();
+        Notification::send($admins, new OrderCreatedNotification($order));
         return $this->SuccessMessage(
             ['order' => $order],
             'Successfully Make New Order',
@@ -77,6 +84,9 @@ class OrderController extends Controller
     {
         $this->authorize('update', $order);
         $order = $this->orderService->update($request->validated(), $order);
+     $recipients = User::admins()->get()->push(Auth::user());
+
+        Notification::send($recipients, new OrderUpdateNotification($order));
         return  $this->SuccessMessage(['order' => $order], 'Successfully Update Order', 200);
     }
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enum\UserRoles;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -111,6 +112,19 @@ class User extends Authenticatable
      */
     public function orders(){
         return  $this->hasMany(Order::class,'customer_id');
+    }
+
+    /**
+     * Summary of scopeAdmins
+     * @param mixed $query
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->whereHas(
+            'roles',
+            fn($q) =>
+            $q->where('name', UserRoles::SuperAdmin->value)
+        );
     }
 
 

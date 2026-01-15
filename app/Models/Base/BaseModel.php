@@ -2,6 +2,7 @@
 
 namespace App\Models\Base;
 
+use App\Enum\UserRoles;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,4 +29,7 @@ class BaseModel extends Model
     {
         return Carbon::parse($value)->format("y-m-d");
     }
+
+   
+
 }
