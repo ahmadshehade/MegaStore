@@ -150,7 +150,7 @@ class OrderService extends BaseService
     {
         $this->cacheFlush('orders');
         $this->cacheFlush('invoices');
-        $this->cacheFlush('T_Invoices');
+        $this->cacheFlush('trashed_invoices');
         $this->cacheFlush('LedgerEntries');
         $this->cacheFlush('T_LedgerEntries');
         $this->cacheFlush('refunds');

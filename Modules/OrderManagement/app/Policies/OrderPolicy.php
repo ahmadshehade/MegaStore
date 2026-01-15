@@ -31,7 +31,13 @@ class OrderPolicy
      */
     public function viewAny(User $user)
     {
-        return  $user->hasRole(UserRoles::Seller->value);
+        if($user->hasRole(UserRoles::Seller->value)) {
+            return true;
+        }
+        if($user->hasRole(UserRoles::Customer->value)) {
+            return true;
+        }
+        return false;
     }
 
     /**

@@ -15,6 +15,13 @@ use Modules\PaymentManagement\Models\Invoice;
 class InvoiceService extends BaseService
 {
     protected $ledgerEntry;
+
+
+    /**
+     * Summary of __construct
+     * @param Invoice $model
+     * @param LedgerEntryService $ledgerEntry
+     */
     public function __construct(Invoice $model,LedgerEntryService $ledgerEntry)
     {
         parent::__construct($model);
@@ -29,7 +36,7 @@ class InvoiceService extends BaseService
         $user     = Auth::user();
         $userId   = $user?->id ?? 'guest';
         $roles = $user
-            ? implode('_', $user->getRoleNames()->toArray())
+            ? implode('_', array: $user->getRoleNames()->toArray())
             : 'guest';
 
         $cacheKey = "invoices:{$userId}:{$roles}:" . md5(json_encode($filters));
@@ -90,6 +97,7 @@ class InvoiceService extends BaseService
         );
     }
 
+
     /**
      * Get single trashed invoice
      */
@@ -99,6 +107,7 @@ class InvoiceService extends BaseService
             ->with(['order', 'payments', 'refunds', 'ledgerEntries'])
             ->findOrFail($invoiceId);
     }
+
 
     /**
      * Create invoice
@@ -115,6 +124,7 @@ class InvoiceService extends BaseService
             'issued_at'      => now(),
         ]);
     }
+
 
     /**
      * Soft delete invoice
@@ -134,6 +144,7 @@ class InvoiceService extends BaseService
         return true;
     }
 
+    
     /**
      * Update invoice (revision)
      */

@@ -6,13 +6,13 @@ use App\Models\Base\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Modules\PaymentManagement\Models\Invoice;
-use Modules\PaymentManagement\Models\Payment;
-use Modules\PaymentManagement\Models\PaymentMethod;
-use Modules\PaymentManagement\Models\Refund;
+
 use Modules\OrderManagement\Models\OrderItem;
 use Modules\OrderManagement\Models\OrderDiscountHistory;
 use Modules\OrderManagement\Models\Discount;
+use Modules\OrderManagement\Models\Scopes\OrderScope;
 use Modules\PaymentManagement\Models\LedgerEntry;
 
 class Order extends BaseModel
@@ -83,11 +83,18 @@ class Order extends BaseModel
      */
     public function ledgerEntries()
     {
-          return $this->hasMany(LedgerEntry::class)
-        ->whereHas('invoice', function ($q) {
-            $q->whereNull('deleted_at');
-        });
+        return $this->hasMany(LedgerEntry::class)
+            ->whereHas('invoice', function ($q) {
+                $q->whereNull('deleted_at');
+            });
     }
 
-
+    /**
+     * Summary of booted
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new OrderScope);
+    }
 }

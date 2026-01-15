@@ -10,6 +10,10 @@ class Invoice extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * Summary of fillable
+     * @var array
+     */
     protected $fillable = [
         'order_id',
         'parent_invoice_id',
@@ -21,6 +25,10 @@ class Invoice extends Model
         'paid_at',
     ];
 
+    /**
+     * Summary of casts
+     * @var array
+     */
     protected $casts = [
         'issued_at' => 'datetime',
         'paid_at' => 'datetime',
@@ -36,26 +44,45 @@ class Invoice extends Model
         return $this->belongsTo(\Modules\OrderManagement\Models\Order::class);
     }
 
+    /**
+     * Summary of parentInvoice
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Invoice, Invoice>
+     */
     public function parentInvoice()
     {
         return $this->belongsTo(self::class, 'parent_invoice_id');
     }
 
+    /**
+     * Summary of childInvoices
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Invoice, Invoice>
+     */
     public function childInvoices()
     {
         return $this->hasMany(self::class, 'parent_invoice_id');
     }
-
+    /**
+     * Summary of payments
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Payment, Invoice>
+     */
     public function payments()
     {
         return $this->hasMany(Payment::class);
     }
 
+    /**
+     * Summary of refunds
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Refund, Invoice>
+     */
     public function refunds()
     {
         return $this->hasMany(Refund::class);
     }
 
+    /**
+     * Summary of ledgerEntries
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<LedgerEntry, Invoice>
+     */
     public function ledgerEntries()
     {
         return $this->hasMany(LedgerEntry::class);
@@ -70,11 +97,19 @@ class Invoice extends Model
         return $this->status === 'paid';
     }
 
+    /**
+     * Summary of isIssued
+     * @return bool
+     */
     public function isIssued(): bool
     {
         return $this->status === 'issued';
     }
 
+    /**
+     * Summary of isRevised
+     * @return bool
+     */
     public function isRevised(): bool
     {
         return $this->status === 'revised';
