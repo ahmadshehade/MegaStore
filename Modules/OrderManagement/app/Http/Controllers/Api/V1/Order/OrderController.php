@@ -12,6 +12,7 @@ use Modules\OrderManagement\Http\Requests\Api\V1\Orders\StoreOrderRequest;
 use Modules\OrderManagement\Http\Requests\Api\V1\Orders\UpdateOrderRequest;
 use Modules\OrderManagement\Models\Order;
 use Modules\OrderManagement\Notifications\OrderCreatedNotification;
+use Modules\OrderManagement\Notifications\OrderDeleteNotification;
 use Modules\OrderManagement\Notifications\OrderUpdateNotification;
 use Modules\OrderManagement\Services\OrderService;
 
@@ -84,8 +85,7 @@ class OrderController extends Controller
     {
         $this->authorize('update', $order);
         $order = $this->orderService->update($request->validated(), $order);
-     $recipients = User::admins()->get()->push(Auth::user());
-
+        $recipients = User::admins()->get()->push(Auth::user());
         Notification::send($recipients, new OrderUpdateNotification($order));
         return  $this->SuccessMessage(['order' => $order], 'Successfully Update Order', 200);
     }
@@ -96,7 +96,21 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         $this->authorize('delete', $order);
+        $orderId = $order->id;
+        $status  = $order->status;
         $success = $this->orderService->destroy($order);
-        return $this->SuccessMessage(['Success' => $success], 'SuccessFully Deleted  Order', 200);
+        if ($success) {
+            $recipients = User::admins()->get()->push(Auth::user());
+
+            Notification::send(
+                $recipients,
+                new OrderDeleteNotification($orderId, $status)
+            );
+        }
+        return $this->SuccessMessage(
+            ['success' => $success],
+            'Successfully Deleted Order',
+            200
+        );
     }
 }
