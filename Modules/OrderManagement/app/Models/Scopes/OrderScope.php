@@ -19,13 +19,14 @@ class OrderScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
+
+        if (!Auth::user()) {
+            return;
+        }
         $user = Auth::user();
 
 
-        if (!$user) {
-            $builder->whereRaw('1 = 0');
-            return;
-        }
+
 
         if ($user->hasRole(UserRoles::SuperAdmin->value)) {
             return;

@@ -26,8 +26,8 @@ class OrderItem extends Model
     ];
 
     /**
-     * Summary of product
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Product, OrderItem>
+     * Summary of productVariant
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<ProductVariant, OrderItem>
      */
     public function productVariant(){
         return $this->belongsTo(ProductVariant::class,'product_variant_id');

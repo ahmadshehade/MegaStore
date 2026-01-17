@@ -7,12 +7,13 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+use Modules\OrderManagement\Models\Scopes\OrderScope;
 use Modules\PaymentManagement\Models\Invoice;
 
 use Modules\OrderManagement\Models\OrderItem;
 use Modules\OrderManagement\Models\OrderDiscountHistory;
 use Modules\OrderManagement\Models\Discount;
-use Modules\OrderManagement\Models\Scopes\OrderScope;
+
 use Modules\PaymentManagement\Models\LedgerEntry;
 
 class Order extends BaseModel

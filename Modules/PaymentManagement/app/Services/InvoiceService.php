@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Modules\OrderManagement\Models\Order;
+use Modules\PaymentManagement\Emails\MakeInvoiceInformation;
+use Modules\PaymentManagement\Emails\UpdateInvoiceInformationMail;
 use Modules\PaymentManagement\Models\Invoice;
 
 class InvoiceService extends BaseService
@@ -22,7 +25,7 @@ class InvoiceService extends BaseService
      * @param Invoice $model
      * @param LedgerEntryService $ledgerEntry
      */
-    public function __construct(Invoice $model,LedgerEntryService $ledgerEntry)
+    public function __construct(Invoice $model, LedgerEntryService $ledgerEntry)
     {
         parent::__construct($model);
         $this->ledgerEntry = $ledgerEntry;
@@ -114,16 +117,30 @@ class InvoiceService extends BaseService
      */
     public function makeInvoice($order): Invoice
     {
-
-
-        return parent::store([
+        $invoice = parent::store([
             'order_id'       => $order->id,
             'invoice_number' => $this->generateInvoiceNumber(),
             'tot_amount'     => $order->tot_amount,
             'status'         => 'issued',
             'issued_at'      => now(),
         ]);
+
+
+        $invoice->load([
+            'order.customer',
+            'order.items.productVariant.product',
+            'order.items.productVariant.attributes',
+            'order.discounts',
+            'order.histories',
+        ]);
+
+        Mail::to(Auth::user()->email)
+            ->queue(new MakeInvoiceInformation($invoice));
+
+        return $invoice;
     }
+
+
 
 
     /**
@@ -144,7 +161,7 @@ class InvoiceService extends BaseService
         return true;
     }
 
-    
+
     /**
      * Update invoice (revision)
      */
@@ -161,11 +178,11 @@ class InvoiceService extends BaseService
         if ($invoice->status === 'paid') {
             throw new Exception('Cannot update a paid invoice', 422);
         }
-        $payments=$invoice->payments()->get();
+        $payments = $invoice->payments()->get();
         $invoice->update([
             'status' => 'revised',
         ]);
-        $newInvoice= parent::store([
+        $newInvoice = parent::store([
             'order_id'           => $order->id,
             'parent_invoice_id'  => $invoice->id,
             'invoice_number'     => $this->generateInvoiceNumber(),
@@ -173,16 +190,23 @@ class InvoiceService extends BaseService
             'status'             => 'issued',
             'issued_at'          => now(),
         ]);
-        foreach($payments  as $payment){
+        foreach ($payments  as $payment) {
             $payment->update([
-                'invoice_id'=>$newInvoice->id
+                'invoice_id' => $newInvoice->id
             ]);
-            $this->ledgerEntry->revisePaymentEntry($payment,$newInvoice->id);
+            $this->ledgerEntry->revisePaymentEntry($payment, $newInvoice->id);
         }
         $invoice->delete();
-
-         return $newInvoice;
-
+        
+        $newInvoice->load([
+            'order.customer',
+            'order.items.productVariant.product',
+            'order.items.productVariant.attributes',
+            'order.discounts',
+            'order.histories',
+        ]);
+        Mail::to($invoice->order->customer->email)->send(new UpdateInvoiceInformationMail($newInvoice));
+        return $newInvoice;
     }
 
     /**
