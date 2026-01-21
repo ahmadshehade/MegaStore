@@ -97,6 +97,7 @@
         $items = collect(optional($order)->items ?? []);
       @endphp
 
+
       <div class="grid">
         <div class="box">
           <h6>Customer</h6>
@@ -141,36 +142,45 @@
                 <td colspan="7" style="text-align:center;color:#6b7280;">No items found</td>
               </tr>
             @else
-              @foreach($items as $item)
-                @php
-                  $price = $item->price ?? 0;
-                  $qty = $item->quantity ?? 1;
-                  $line = $price * $qty;
-                  $calcSubtotal += $line;
-                  $variant = optional($item)->productVariant;
-                  $product = optional($variant)->product;
-                  $attributes = collect(optional($variant)->attributes ?? []);
-                @endphp
-                <tr>
-                  <td>{{ $variant->sku ?? '-' }}</td>
-                  <td>{{ $product->name ?? ($item->product_name ?? '-') }}</td>
-                  <td>{{ $variant->sku ?? '-' }}</td>
-                  <td>
-                    @if($attributes->isNotEmpty())
-                      @foreach($attributes as $attr)
-                        <strong>{{ $attr->name ?? '-' }}</strong>
-                        @if(optional($attr->pivot)->value ?? false) : {{ optional($attr->pivot)->value }} @endif
-                        {{ $loop->last ? '' : ', ' }}
-                      @endforeach
-                    @else
-                      —
-                    @endif
-                  </td>
-                  <td>{{ number_format($price,2) }}</td>
-                  <td>{{ $qty }}</td>
-                  <td>{{ number_format($line,2) }}</td>
-                </tr>
-              @endforeach
+          @foreach($invoice->order->items as $item)
+    @php
+        $variant = $item->productVariant;
+        $product = $variant?->product;
+
+        $price = ($variant?->price ?? 0);
+        $qty   = (int) ($item->quantity ?? 1);
+        $line  = $item->subtotal;
+
+        $calcSubtotal += $line;
+    @endphp
+
+    <tr>
+        <td>{{ $variant->sku ?? '-' }}</td>
+
+        <td>{{ $product->name ?? '-' }}</td>
+
+        <td>{{ $variant->sku ?? '-' }}</td>
+
+        <td>
+            @forelse($variant->attributes as $attr)
+                <strong>{{ $attr->name }}</strong>
+                @if(!empty($attr->pivot?->value))
+                    : {{ $attr->pivot->value }}
+                @endif
+                @if(!$loop->last), @endif
+            @empty
+                —
+            @endforelse
+        </td>
+
+        <td>{{ number_format($price, 2) }}</td>
+
+        <td>{{ $qty }}</td>
+
+        <td>{{ number_format($line, 2) }}</td>
+    </tr>
+@endforeach
+
             @endif
           </tbody>
         </table>

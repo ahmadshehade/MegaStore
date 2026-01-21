@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Modules\OrderManagement\Models\Order;
+use Modules\PaymentManagement\Emails\DeleteInvoiceInformation;
 use Modules\PaymentManagement\Emails\MakeInvoiceInformation;
 use Modules\PaymentManagement\Emails\UpdateInvoiceInformationMail;
 use Modules\PaymentManagement\Models\Invoice;
@@ -134,8 +135,8 @@ class InvoiceService extends BaseService
             'order.histories',
         ]);
 
-        Mail::to(Auth::user()->email)
-            ->queue(new MakeInvoiceInformation($invoice));
+       Mail::to(Auth::user()->email)
+            ->send(new MakeInvoiceInformation($invoice));
 
         return $invoice;
     }
@@ -155,9 +156,16 @@ class InvoiceService extends BaseService
         $order->invoice->update([
             'status' => 'cancelled',
         ]);
-
+        $invocie_id = $order->invoice->id;
+        $status = $order->invoice->status;
+        $order_id = $order->id;
         $order->invoice->delete();
-
+        Mail::to(Auth::user()->email)
+            ->send(new DeleteInvoiceInformation(
+                $invocie_id,
+                $status,
+                $order_id
+            ));
         return true;
     }
 
@@ -197,7 +205,7 @@ class InvoiceService extends BaseService
             $this->ledgerEntry->revisePaymentEntry($payment, $newInvoice->id);
         }
         $invoice->delete();
-        
+
         $newInvoice->load([
             'order.customer',
             'order.items.productVariant.product',

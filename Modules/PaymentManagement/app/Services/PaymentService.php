@@ -2,6 +2,7 @@
 
 namespace Modules\PaymentManagement\Services;
 
+use App\Models\User;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use Exception;
@@ -12,7 +13,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Modules\OrderManagement\Models\Order;
+use Modules\PaymentManagement\Emails\Payments\MakeNewPaymentMail;
 use Modules\PaymentManagement\Models\Invoice;
 use Modules\PaymentManagement\Models\LedgerEntry;
 use Modules\PaymentManagement\Models\Payment;
@@ -86,7 +89,25 @@ class PaymentService extends BaseService
                 $invoice->order->update(['status' => 'processing']);
             }
             $entry =  $this->paymentEntry->createPaymentEntry($payment);
+            $payment->load([
+
+                'invoice',
+                'invoice.order',
+                'invoice.order.items.productVariant.product',
+                'invoice.order.items.productVariant.attributes',
+                'invoice.order.discounts',
+                'invoice.order.histories',
+                'invoice.payments'
+            ]);
+            $users = User::admins()
+                ->pluck('email')
+                ->push(optional(Auth::user())->email)
+                ->filter()
+                ->unique()
+                ->values();
+
             DB::commit();
+            Mail::to($users)->queue(new MakeNewPaymentMail($payment));
             return $payment
                 ->load(['invoice', 'invoice.refunds', 'paymentMethod', 'invoice.ledgerEntries']);
         } catch (Exception $e) {
@@ -115,14 +136,5 @@ class PaymentService extends BaseService
             ]);
     }
 
-    /**
-     * Summary of update
-     * @param array $data
-     * @param Model $payment
-     * @return Model
-     */
 
-
-
-    
 }

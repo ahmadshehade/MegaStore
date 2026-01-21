@@ -87,11 +87,16 @@
                                         </tr>
                                     @else
                                         @foreach($items as $item)
-                                            @php
-                                                $variant = optional($item)->productVariant;
-                                                $product = optional($variant)->product;
-                                                $line = ($item->price ?? 0) * ($item->quantity ?? 1);
-                                            @endphp
+                                             @php
+        $variant = $item->productVariant;
+        $product = $variant?->product;
+
+        $price = ($variant?->price ?? 0);
+        $qty   = (int) ($item->quantity ?? 1);
+        $line  = $item->subtotal;
+
+        $calcSubtotal += $line;
+    @endphp
                                             <tr>
                                                 <td style="padding:8px;border:1px solid #eee;">
                                                     {{ $product->name ?? $item->product_name ?? '-' }}
@@ -100,10 +105,10 @@
                                                     {{ $variant->sku ?? '-' }}
                                                 </td>
                                                 <td style="padding:8px;border:1px solid #eee;">
-                                                    {{ number_format($item->price ?? 0, 2) }}
+                                                    {{ number_format($price?? 0, 2) }}
                                                 </td>
                                                 <td style="padding:8px;border:1px solid #eee;">
-                                                    {{ $item->quantity ?? 1 }}
+                                                    {{ $qty ?? 1 }}
                                                 </td>
                                                 <td style="padding:8px;border:1px solid #eee;">
                                                     {{ number_format($line, 2) }}
