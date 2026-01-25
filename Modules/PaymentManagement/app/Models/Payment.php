@@ -2,8 +2,10 @@
 
 namespace Modules\PaymentManagement\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Modules\PaymentManagement\Models\Scopes\PaymentScope;
 
 class Payment extends Model
 {
@@ -18,6 +20,7 @@ class Payment extends Model
         'status',
         'payment_notes',
         'payment_date',
+        'customer_id'
     ];
 
     protected $casts = [
@@ -54,6 +57,15 @@ class Payment extends Model
         return $this->hasMany(LedgerEntry::class);
     }
 
+    /**
+     * Summary of customer
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<User, Payment>
+     */
+    public  function customer()
+    {
+        return $this->belongsTo(User::class, 'customer_id');
+    }
+
     // =======================
     // HELPERS
     // =======================
@@ -66,5 +78,10 @@ class Payment extends Model
     public function isRefunded(): bool
     {
         return $this->status === 'refunded';
+    }
+
+    public  static function booted()
+    {
+        static::addGlobalScope(new PaymentScope);
     }
 }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->cascadeOnDelete();
+            $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
             $table->decimal('amount', 10, 2);
             $table->string('currency')->default('USD');
             $table->text('payment_notes')->nullable();

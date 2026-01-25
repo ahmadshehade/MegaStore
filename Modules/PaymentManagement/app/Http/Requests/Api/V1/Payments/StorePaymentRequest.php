@@ -7,14 +7,24 @@ use Illuminate\Support\Facades\Gate;
 use Modules\PaymentManagement\Models\Payment;
 use Modules\PaymentManagement\Models\Invoice;
 use Illuminate\Contracts\Validation\Validator;
+use Modules\PaymentManagement\Models\PaymentMethod;
 
 class StorePaymentRequest extends BaseRequest
 {
+
+    /**
+     * Summary of authorize
+     * @return bool
+     */
     public function authorize(): bool
     {
         return Gate::allows('create', Payment::class);
     }
 
+    /**
+     * Summary of rules
+     * @return array{amount: string[], currency: string[], invoice_id: string[], payment_date: string[], payment_method_id: string[], payment_notes: string[]}
+     */
     public function rules(): array
     {
         return [
@@ -52,6 +62,10 @@ class StorePaymentRequest extends BaseRequest
         ];
     }
 
+    /**
+     * Summary of messages
+     * @return array{amount.gt: string, amount.numeric: string, amount.regex: string, amount.required: string, currency.size: string, currency.string: string, invoice_id.exists: string, invoice_id.integer: string, invoice_id.required: string, payment_date.before_or_equal: string, payment_date.date: string, payment_method_id.exists: string, payment_method_id.integer: string, payment_notes.max: string, payment_notes.string: string}
+     */
     public function messages(): array
     {
         return [
@@ -73,40 +87,98 @@ class StorePaymentRequest extends BaseRequest
         ];
     }
 
+    /**
+     * Summary of withValidator
+     * @param Validator $validator
+     * @return void
+     */
     protected function withValidator(Validator $validator): void
     {
         $validator->after(function ($v) {
-
             if (! $this->has('invoice_id') || ! $this->has('amount')) {
                 return;
             }
 
-            $invoice = Invoice::with('payments')->find($this->invoice_id);
+            $scale = 2;
 
+            $paymentMethod = null;
+            $fee = '0.00';
+            if ($this->filled('payment_method_id')) {
+                $paymentMethod = PaymentMethod::find($this->payment_method_id);
+                if (! $paymentMethod) {
+                    $v->errors()->add('payment_method_id', 'Invalid payment method.');
+                    return;
+                }
+
+                $fee = number_format($paymentMethod->fee, $scale, '.', '');
+            }
+
+            $invoice = Invoice::with('payments')->find($this->invoice_id);
             if (! $invoice) {
                 $v->errors()->add('invoice_id', 'Invoice not found.');
                 return;
             }
 
-            if ($invoice->status === 'paid') {
-                $v->errors()->add('invoice_id', 'Invoice is already paid.');
+            if (in_array($invoice->status, ['paid', 'cancelled', 'revised'])) {
+                $v->errors()->add(
+                    'invoice_id',
+                    'This invoice cannot be paid. Current status: ' . $invoice->status . '.'
+                );
                 return;
             }
 
-            if ($invoice->status === 'cancelled' ) {
-                $v->errors()->add('invoice_id', 'Invoice is not payable.');
-                return;
-            }
-
-            $paidAmount = (string) $invoice->payments()->sum('amount');
+            $paidAmount  = (string) $invoice->payments()->sum('amount');
             $totalAmount = (string) $invoice->tot_amount;
-            $paymentAmount = (string) $this->amount;
+            $remaining   = bcsub($totalAmount, $paidAmount, $scale);
 
-            $remaining = bcsub($totalAmount, $paidAmount, 2);
-            $remainingAfterPayment = bcsub($remaining, $paymentAmount, 2);
+            // Invoice already fully paid
+            if (bccomp($remaining, '0', $scale) <= 0) {
+                $v->errors()->add('invoice_id', 'This invoice has already been fully paid.');
+                return;
+            }
 
-            if (bccomp($remainingAfterPayment, '0', 2) === -1) {
-                $v->errors()->add('amount', 'Payment amount exceeds the remaining invoice balance.');
+            $grossInput = number_format($this->amount, $scale, '.', '');
+
+            if (bccomp($grossInput, $fee, $scale) <= 0) {
+                $v->errors()->add(
+                    'amount',
+                    'The payment amount must be greater than the payment method fee (' . $fee . ').'
+                );
+                return;
+            }
+
+
+            if (bccomp($remaining, $fee, $scale) <= 0) {
+                $requiredGross = bcadd($remaining, $fee, $scale);
+
+                if (bccomp($grossInput, $requiredGross, $scale) !== 0) {
+                    $v->errors()->add('amount', sprintf(
+                        'Only %s remains on this invoice and the fee is %s. You must send exactly %s (gross amount) to complete the payment.',
+                        $remaining,
+                        $fee,
+                        $requiredGross
+                    ));
+                    return;
+                }
+
+                return;
+            }
+
+            $net = bcsub($grossInput, $fee, $scale);
+
+            if (bccomp($net, $remaining, $scale) === 1) {
+                $maxAllowedGross = bcadd($remaining, $fee, $scale);
+
+                $v->errors()->add('amount', sprintf(
+                    'The sent amount (%s) results in a net payment (%s) that exceeds the remaining invoice balance (%s). The maximum allowed gross amount is %s (remaining %s + fee %s).',
+                    $grossInput,
+                    $net,
+                    $remaining,
+                    $maxAllowedGross,
+                    $remaining,
+                    $fee
+                ));
+                return;
             }
         });
     }

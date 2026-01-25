@@ -19,6 +19,7 @@ use Modules\PaymentManagement\Emails\Payments\MakeNewPaymentMail;
 use Modules\PaymentManagement\Models\Invoice;
 use Modules\PaymentManagement\Models\LedgerEntry;
 use Modules\PaymentManagement\Models\Payment;
+use Modules\PaymentManagement\Models\PaymentMethod;
 use Modules\PaymentManagement\Models\Refund;
 
 class PaymentService extends BaseService
@@ -57,65 +58,165 @@ class PaymentService extends BaseService
      * @throws HttpClientException
      * @return Model
      */
-    public function store(array $data): Model
-    {
-        try {
+public function store(array $data): Model
+{
+    DB::beginTransaction();
 
-            DB::beginTransaction();
-            $invoice = Invoice::where('id', $data['invoice_id'])
-                ->lockForUpdate()
-                ->firstOrFail();
-            if (in_array($invoice->status, ['paid', 'cancelled', 'revised'])) {
-                throw new HttpClientException('Cannot pay this invoice.', 403);
-            }
-            $scale = 2;
-            $total = (string) $invoice->tot_amount;
-            $paid = (string) LedgerEntry::where('invoice_id', $invoice->id)
-                ->whereIn('entry_type', ['payment'])
-                ->sum('credit');
-            $remaining = bcsub($total, $paid, $scale);
-            if (bccomp($remaining, '0', $scale) <= 0) {
-                throw new HttpClientException('Invoice is already fully paid.', 409);
-            }
-            if (bccomp($data['amount'], $remaining, $scale) === 1) {
-                throw new HttpClientException('Payment exceeds remaining invoice balance.', 403);
-            }
-            $payment = parent::store($data);
-            $newRemaining = bcsub($remaining, (string) $payment->amount, $scale);
-            if (bccomp($newRemaining, '0', $scale) === 0) {
-                $invoice->update(['status' => 'paid']);
-            } else {
-                $invoice->update(['status' => 'partial']);
-                $invoice->order->update(['status' => 'processing']);
-            }
-            $entry =  $this->paymentEntry->createPaymentEntry($payment);
-            $payment->load([
+    try {
+        $scale = 2;
 
-                'invoice',
-                'invoice.order',
-                'invoice.order.items.productVariant.product',
-                'invoice.order.items.productVariant.attributes',
-                'invoice.order.discounts',
-                'invoice.order.histories',
-                'invoice.payments'
+        $invoice = Invoice::where('id', $data['invoice_id'])
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if (in_array($invoice->status, ['paid', 'cancelled', 'revised'])) {
+            throw new HttpClientException(
+                'This invoice cannot be paid.',
+                403
+            );
+        }
+
+        $total = (string) $invoice->tot_amount;
+        $paid  = (string) LedgerEntry::where('invoice_id', $invoice->id)
+            ->whereIn('entry_type', ['payment'])
+            ->sum('credit');
+
+        $remaining = bcsub($total, $paid, $scale);
+
+        if (bccomp($remaining, '0', $scale) <= 0) {
+            throw new HttpClientException(
+                'This invoice has already been fully paid.',
+                409
+            );
+        }
+
+        $paymentMethod = null;
+        $fee = '0.00';
+        if (! empty($data['payment_method_id'])) {
+            $paymentMethod = PaymentMethod::findOrFail($data['payment_method_id']);
+            $fee = number_format($paymentMethod->fee, $scale, '.', '');
+        }
+
+        // Gross amount sent by the client
+        $grossAmount = number_format((string) $data['amount'], $scale, '.', '');
+
+        // Gross amount must be greater than the fee
+        if (bccomp($grossAmount, $fee, $scale) <= 0) {
+            throw new HttpClientException(
+                sprintf(
+                    'The sent amount (%s) must be greater than the payment method fee (%s).',
+                    $grossAmount,
+                    $fee
+                ),
+                422
+            );
+        }
+
+        if (bccomp($remaining, $fee, $scale) <= 0) {
+            $requiredGross = bcadd($remaining, $fee, $scale);
+
+            if (bccomp($grossAmount, $requiredGross, $scale) !== 0) {
+                throw new HttpClientException(
+                    sprintf(
+                        'Only %s remains on this invoice and the fee is %s. You must send exactly %s as the gross amount.',
+                        $remaining,
+                        $fee,
+                        $requiredGross
+                    ),
+                    422
+                );
+            }
+
+            $netAmount = $remaining;
+        } else {
+
+            $netAmount = bcsub($grossAmount, $fee, $scale);
+
+
+            if (bccomp($netAmount, $remaining, $scale) === 1) {
+                $maxAllowedGross = bcadd($remaining, $fee, $scale);
+
+                throw new HttpClientException(
+                    sprintf(
+                        'The sent amount results in a net payment greater than the remaining invoice balance. The maximum allowed gross amount is %s (remaining %s + fee %s).',
+                        $maxAllowedGross,
+                        $remaining,
+                        $fee
+                    ),
+                    422
+                );
+            }
+        }
+
+        $data['amount']       = $netAmount;
+        $data['customer_id']  = $invoice->order->customer_id ?? null;
+        $data['gross_amount'] = $grossAmount;
+        $data['fee']          = $fee;
+
+        $payment = parent::store($data);
+
+        $newRemaining = bcsub($remaining, $netAmount, $scale);
+
+        if (bccomp($newRemaining, '0', $scale) === 0) {
+            $invoice->update([
+                'status'  => 'paid',
+                'paid_at' => now(),
             ]);
-            $users = User::admins()
+            $invoice->order->update(['status' => 'completed']);
+        } else {
+            $invoice->update(['status' => 'partial']);
+            $invoice->order->update(['status' => 'processing']);
+        }
+
+
+        $this->paymentEntry->createPaymentEntry($payment);
+
+        DB::commit();
+
+
+        Mail::to(
+            User::admins()
                 ->pluck('email')
                 ->push(optional(Auth::user())->email)
                 ->filter()
                 ->unique()
-                ->values();
+        )->queue(new MakeNewPaymentMail($payment));
 
-            DB::commit();
-            Mail::to($users)->queue(new MakeNewPaymentMail($payment));
-            return $payment
-                ->load(['invoice', 'invoice.refunds', 'paymentMethod', 'invoice.ledgerEntries']);
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Fail Make Payment: ' . $e->getMessage());
-            throw $e;
+
+        try {
+            $payer = optional($payment->payer) ?: optional(Auth::user());
+            if ($payer) {
+                $message = sprintf(
+                    'Your payment has been processed. Gross amount: %s, fee: %s, net amount applied to the invoice: %s.',
+                    $grossAmount,
+                    $fee,
+                    $netAmount
+                );
+
+
+            }
+        } catch (Exception $notifyEx) {
+            Log::warning(
+                'Failed to notify payer about fee deduction: ' . $notifyEx->getMessage()
+            );
         }
+
+        return $payment->load([
+            'invoice',
+            'invoice.refunds',
+            'paymentMethod',
+            'invoice.ledgerEntries',
+        ]);
+    } catch (Exception $e) {
+        DB::rollBack();
+        Log::error('Fail Make Payment: ' . $e->getMessage());
+        throw $e;
     }
+}
+
+
+
+
 
 
 
@@ -135,6 +236,4 @@ class PaymentService extends BaseService
                 'ledgerEntries'
             ]);
     }
-
-
 }

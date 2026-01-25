@@ -54,7 +54,7 @@ class OrderService extends BaseService
             : 'guest';
         $cacheKey = "Orders_" . $userKey . "_" . ((empty($filters) ? "" : md5(json_encode($filters))));
         return Cache::tags(['orders'])->remember($cacheKey, now()->addMinute(), function () use ($filters) {
-            return parent::getAll($filters);
+            return parent::getAll($filters)->load(['items','customer','discounts','histories','invoice','ledgerEntries']);
         });
     }
 
@@ -87,7 +87,7 @@ class OrderService extends BaseService
 
             return $order->load(['items', 'discounts', 'invoice', 'ledgerEntries']);
         });
-      
+
 
     }
 

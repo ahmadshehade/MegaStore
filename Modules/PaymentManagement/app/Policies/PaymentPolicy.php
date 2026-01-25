@@ -43,11 +43,8 @@ class PaymentPolicy
      */
     public function view(User $user, Payment $payment): bool
     {
-        $order = $payment->invoice?->order;
-
-        return $order
-            && $user->hasRole(UserRoles::Customer->value)
-            && $order->customer_id === $user->id;
+        return $user->hasRole(UserRoles::Customer->value) &&
+         $user->id===$payment->customer_id;
     }
 
     /**

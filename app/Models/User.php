@@ -13,6 +13,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\OrderManagement\Models\Discount;
 use Modules\OrderManagement\Models\Order;
+use Modules\PaymentManagement\Models\Payment;
 use Modules\ProductManagement\Models\Attribute;
 use Modules\ProductManagement\Models\Product;
 use Spatie\Permission\Traits\HasRoles;
@@ -112,6 +113,14 @@ class User extends Authenticatable
      */
     public function orders(){
         return  $this->hasMany(Order::class,'customer_id');
+    }
+
+    /**
+     * Summary of payments
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Payment, User>
+     */
+    public function payments(){
+        return $this->hasMany(Payment::class,'customer_id');
     }
 
     /**
