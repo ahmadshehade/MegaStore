@@ -97,10 +97,8 @@ public function store(array $data): Model
             $fee = number_format($paymentMethod->fee, $scale, '.', '');
         }
 
-        // Gross amount sent by the client
         $grossAmount = number_format((string) $data['amount'], $scale, '.', '');
 
-        // Gross amount must be greater than the fee
         if (bccomp($grossAmount, $fee, $scale) <= 0) {
             throw new HttpClientException(
                 sprintf(
@@ -131,8 +129,6 @@ public function store(array $data): Model
         } else {
 
             $netAmount = bcsub($grossAmount, $fee, $scale);
-
-
             if (bccomp($netAmount, $remaining, $scale) === 1) {
                 $maxAllowedGross = bcadd($remaining, $fee, $scale);
 

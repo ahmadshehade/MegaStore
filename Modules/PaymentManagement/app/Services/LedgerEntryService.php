@@ -2,12 +2,17 @@
 
 namespace Modules\PaymentManagement\Services;
 
+use App\Models\User;
 use App\Services\BaseService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use LogicException;
+use Modules\OrderManagement\Emails\OverPaymentMail;
+use Modules\OrderManagement\Notifications\OverPaymentNotification;
 use Modules\PaymentManagement\Models\LedgerEntry;
 
 class LedgerEntryService extends BaseService
@@ -223,7 +228,7 @@ class LedgerEntryService extends BaseService
         return $ledgerEntries;
     }
 
-    public function overPaymentEntry($overPayment, $user)
+    public function overPaymentEntry($overPayment, $user, $model)
     {
         $ledgerEntry = LedgerEntry::create([
             'customer_id' => $user->id,
@@ -232,6 +237,9 @@ class LedgerEntryService extends BaseService
             'credit'      => $overPayment,
             'description' => " Over Payment issued (#{$overPayment})",
         ]);
+        $admins = User::admins()->get()->push(Auth::user());
+        Notification::send($admins, new OverPaymentNotification($overPayment, $model));
+        Mail::to($model->customer->email)->send(new OverPaymentMail($model, $overPayment));
         return $ledgerEntry;
     }
 }

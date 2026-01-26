@@ -205,7 +205,6 @@ class InvoiceService extends BaseService
             $this->ledgerEntry->revisePaymentEntry($payment, $newInvoice->id);
         }
         $invoice->delete();
-
         $newInvoice->load([
             'order.customer',
             'order.items.productVariant.product',
@@ -213,6 +212,7 @@ class InvoiceService extends BaseService
             'order.discounts',
             'order.histories',
         ]);
+
         Mail::to($invoice->order->customer->email)->send(new UpdateInvoiceInformationMail($newInvoice));
         return $newInvoice;
     }

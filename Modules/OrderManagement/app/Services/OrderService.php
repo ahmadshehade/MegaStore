@@ -13,10 +13,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Modules\OrderManagement\Emails\OverPaymentMail;
 use Modules\OrderManagement\Notifications\OrderCreatedNotification;
 use Modules\OrderManagement\DataTransferObjects\OrderItemProcessor;
 use Modules\OrderManagement\Models\Order;
+use Modules\OrderManagement\Notifications\OverPaymentNotification;
 use Modules\PaymentManagement\Services\InvoiceService;
 use Modules\PaymentManagement\Services\LedgerEntryService;
 use Throwable;
@@ -91,9 +94,6 @@ class OrderService extends BaseService
             }
             $invoice = $this->invoice->makeInvoice($order);
             $this->ledgerEntry->createInvoiceEntry($invoice);
-            $admins = User::admins()->get();
-
-
             return $order->load([
                 'items',
                 'discounts',
@@ -132,13 +132,18 @@ class OrderService extends BaseService
                 $this->makeTotAmount->syncDiscountsAndHistory($data, $model, $total);
                 $paid = $invoice->payments()->sum('amount') ?? 0;
                 $overPayment = bcsub($paid, $tot, 2);
+                $flag = false;
                 if (bccomp($overPayment, '0', 2) === 1) {
-                    $this->ledgerEntry->overPaymentEntry($overPayment, $model->customer);
+                    $flag = true;
                 }
             }
             $order = parent::update($data, $model);
             $invoice = $this->invoice->updateInvoice($model);
+             
             $this->ledgerEntry->reviseInvoiceEntry($invoice);
+            if ($flag) {
+                $this->ledgerEntry->overPaymentEntry($overPayment, $order->customer,$order);
+            }
 
             $this->cacheFlushMultiple();
 

@@ -79,33 +79,34 @@
                                 </thead>
                                 <tbody>
 
-                                    @if($items->isEmpty())
+                                    @if ($items->isEmpty())
                                         <tr>
                                             <td colspan="5" style="padding:12px;text-align:center;color:#777;">
                                                 No items found
                                             </td>
                                         </tr>
                                     @else
-                                        @foreach($items as $item)
-                                             @php
-        $variant = $item->productVariant;
-        $product = $variant?->product;
+                                        @foreach ($items as $item)
+                                            @php
+                                                $calcSubtotal = 0;
+                                                $variant = $item->productVariant;
+                                                $product = $variant?->product;
 
-        $price = ($variant?->price ?? 0);
-        $qty   = (int) ($item->quantity ?? 1);
-        $line  = $item->subtotal;
+                                                $price = $variant?->price ?? 0;
+                                                $qty = (int) ($item->quantity ?? 1);
+                                                $line = $item->subtotal;
 
-        $calcSubtotal += $line;
-    @endphp
+                                                $calcSubtotal += $line;
+                                            @endphp
                                             <tr>
                                                 <td style="padding:8px;border:1px solid #eee;">
-                                                    {{ $product->name ?? $item->product_name ?? '-' }}
+                                                    {{ $product->name ?? ($item->product_name ?? '-') }}
                                                 </td>
                                                 <td style="padding:8px;border:1px solid #eee;">
                                                     {{ $variant->sku ?? '-' }}
                                                 </td>
                                                 <td style="padding:8px;border:1px solid #eee;">
-                                                    {{ number_format($price?? 0, 2) }}
+                                                    {{ number_format($price ?? 0, 2) }}
                                                 </td>
                                                 <td style="padding:8px;border:1px solid #eee;">
                                                     {{ $qty ?? 1 }}
@@ -125,7 +126,8 @@
                                 <tr>
                                     <td align="right" style="padding:6px;font-weight:bold;">Subtotal:</td>
                                     <td align="right" style="padding:6px;">
-                                        {{ number_format($invoice->subtotal ?? 0, 2) }} {{ $invoice->currency ?? 'USD' }}
+                                        {{ number_format($invoice->subtotal ?? 0, 2) }}
+                                        {{ $invoice->currency ?? 'USD' }}
                                     </td>
                                 </tr>
                                 <tr>
@@ -159,7 +161,8 @@
 
                             <!-- CTA -->
                             <div style="text-align:center;margin-top:30px;">
-                                <a href="{{ url('/invoices/' . $invoice->id) }}" style="background:#0d6efd;color:#fff;text-decoration:none;
+                                <a href="{{ url('/invoices/' . $invoice->id) }}"
+                                    style="background:#0d6efd;color:#fff;text-decoration:none;
           padding:12px 25px;border-radius:6px;font-weight:bold;">
                                     View Invoice
                                 </a>
