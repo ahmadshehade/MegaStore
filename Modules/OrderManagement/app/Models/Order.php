@@ -2,6 +2,7 @@
 
 namespace Modules\OrderManagement\Models;
 
+use App\Enum\InvoiceStatus;
 use App\Models\Base\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -75,6 +76,8 @@ class Order extends BaseModel
     public function invoice()
     {
         return $this->hasOne(Invoice::class, 'order_id');
+
+
     }
 
 

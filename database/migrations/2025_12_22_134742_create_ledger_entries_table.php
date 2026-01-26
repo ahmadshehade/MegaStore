@@ -19,13 +19,14 @@ return new class extends Migration
             $table->foreignId('invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
             $table->foreignId('payment_id')->nullable()->constrained('payments')->nullOnDelete();
             $table->foreignId('refund_id')->nullable()->constrained('refunds')->nullOnDelete();
-
+             $table->foreignId('customer_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->enum('entry_type', [
                 'invoice',
                 'invoice_reversal',
                 'payment',
                 'payment_reversal',
-                'refund'
+                'refund',
+                'over_payment'
             ]);
 
             $table->decimal('debit', 12, 2)->default(0);

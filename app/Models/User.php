@@ -13,6 +13,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\OrderManagement\Models\Discount;
 use Modules\OrderManagement\Models\Order;
+use Modules\PaymentManagement\Models\LedgerEntry;
 use Modules\PaymentManagement\Models\Payment;
 use Modules\ProductManagement\Models\Attribute;
 use Modules\ProductManagement\Models\Product;
@@ -121,6 +122,14 @@ class User extends Authenticatable
      */
     public function payments(){
         return $this->hasMany(Payment::class,'customer_id');
+    }
+
+    /**
+     * Summary of ledgerEntries
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<LedgerEntry, User>
+     */
+    public function ledgerEntries(){
+        return $this->hasMany(LedgerEntry::class,'customer_id');
     }
 
     /**

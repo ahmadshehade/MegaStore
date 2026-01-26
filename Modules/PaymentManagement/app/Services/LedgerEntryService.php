@@ -169,7 +169,11 @@ class LedgerEntryService extends BaseService
     }
 
 
-
+    /**
+     * Summary of createPaymentEntry
+     * @param mixed $payment
+     * @return LedgerEntry
+     */
     public function createPaymentEntry($payment): LedgerEntry
     {
 
@@ -186,6 +190,12 @@ class LedgerEntryService extends BaseService
     }
 
 
+    /**
+     * Summary of revisePaymentEntry
+     * @param mixed $payment
+     * @param mixed $newInvoiceId
+     * @return array
+     */
     public function revisePaymentEntry($payment, $newInvoiceId): array
     {
         $ledgerEntries = [];
@@ -211,5 +221,17 @@ class LedgerEntryService extends BaseService
         ]);
 
         return $ledgerEntries;
+    }
+
+    public function overPaymentEntry($overPayment, $user)
+    {
+        $ledgerEntry = LedgerEntry::create([
+            'customer_id' => $user->id,
+            'entry_type'  => 'over_payment',
+            'debit'       => 0.00,
+            'credit'      => $overPayment,
+            'description' => " Over Payment issued (#{$overPayment})",
+        ]);
+        return $ledgerEntry;
     }
 }

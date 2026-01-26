@@ -54,7 +54,16 @@ class OrderService extends BaseService
             : 'guest';
         $cacheKey = "Orders_" . $userKey . "_" . ((empty($filters) ? "" : md5(json_encode($filters))));
         return Cache::tags(['orders'])->remember($cacheKey, now()->addMinute(), function () use ($filters) {
-            return parent::getAll($filters)->load(['items','customer','discounts','histories','invoice','ledgerEntries']);
+            return parent::getAll($filters)->load([
+                'items',
+                'customer',
+                'discounts',
+                'histories',
+                'invoice',
+                'ledgerEntries' => function ($q) {
+                    $q->visibleFor(Auth::user());
+                }
+            ]);
         });
     }
 
@@ -82,13 +91,18 @@ class OrderService extends BaseService
             }
             $invoice = $this->invoice->makeInvoice($order);
             $this->ledgerEntry->createInvoiceEntry($invoice);
-            $admins=User::admins()->get();
+            $admins = User::admins()->get();
 
 
-            return $order->load(['items', 'discounts', 'invoice', 'ledgerEntries']);
+            return $order->load([
+                'items',
+                'discounts',
+                'invoice',
+                'ledgerEntries' => function ($q) {
+                    $q->visibleFor(Auth::user());
+                }
+            ]);
         });
-
-
     }
 
 
@@ -107,8 +121,7 @@ class OrderService extends BaseService
                 throw new HttpResponseException(response()->json(['message' => 'Invoice Order is Paid .']));
             }
             if (isset($data['variants'])) {
-                $data['tot_amount'] =
-                    $this->makeTotAmount->processOrderItems($data, $model);
+                $data['tot_amount'] = $this->makeTotAmount->processOrderItems($data, $model);
             }
             $total = $model->tot_amount;
             if (isset($data['discounts'])) {
@@ -117,14 +130,29 @@ class OrderService extends BaseService
                     'tot_amount' => $tot,
                 ]);
                 $this->makeTotAmount->syncDiscountsAndHistory($data, $model, $total);
+                $paid = $invoice->payments()->sum('amount') ?? 0;
+                $overPayment = bcsub($paid, $tot, 2);
+                if (bccomp($overPayment, '0', 2) === 1) {
+                    $this->ledgerEntry->overPaymentEntry($overPayment, $model->customer);
+                }
             }
             $order = parent::update($data, $model);
             $invoice = $this->invoice->updateInvoice($model);
             $this->ledgerEntry->reviseInvoiceEntry($invoice);
+
             $this->cacheFlushMultiple();
-            return $order->load(['items', 'discounts', 'invoice', 'ledgerEntries']);
+
+            return $order->load([
+                'items',
+                'discounts',
+                'invoice',
+                'ledgerEntries' => function ($q) {
+                    $q->visibleFor(Auth::user());
+                }
+            ]);
         });
     }
+
 
     /**
      * Get single order with relations.
@@ -135,7 +163,14 @@ class OrderService extends BaseService
     public function get(Model $model): Model
     {
         $order = parent::get($model);
-        return $order->load(['items', 'discounts', 'invoice', 'ledgerEntries']);
+        return $order->load([
+            'items',
+            'discounts',
+            'invoice',
+            'ledgerEntries' => function ($q) {
+                $q->visibleFor(Auth::user());
+            }
+        ]);
     }
 
     /**
