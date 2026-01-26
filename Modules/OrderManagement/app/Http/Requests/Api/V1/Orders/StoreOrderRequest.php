@@ -4,13 +4,11 @@ namespace Modules\OrderManagement\Http\Requests\Api\V1\Orders;
 
 use App\Enum\UserRoles;
 use App\Http\Requests\BaseRequest;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 use Modules\OrderManagement\Models\Order;
-use Modules\OrderManagement\Models\ProductVariant;
 use Modules\ProductManagement\Models\ProductVariant as ModelsProductVariant;
 
 class StoreOrderRequest extends BaseRequest
@@ -49,7 +47,7 @@ class StoreOrderRequest extends BaseRequest
             'variants.*'        => ['required', 'integer', 'min:1'],
             'meta'              => ['nullable', 'array'],
             'meta.*'            => ['array'],
-            'description'=>['sometimes','string','min:2','max:255'],
+            'description' => ['sometimes', 'string', 'min:2', 'max:255'],
         ];
         if ($user && $user->hasRole(UserRoles::SuperAdmin->value)) {
             $rules['discounts']     = ['sometimes', 'array'];
@@ -89,9 +87,9 @@ class StoreOrderRequest extends BaseRequest
             'status.string' => 'The order status must be a valid string.',
             'status.in'     => 'The selected order status is invalid. Allowed values are: pending, processing, completed, or cancelled.',
 
-            'description.string'=>'The Description Must Be String .',
-            'description.min'=>'The Description Must Be Over 2 Cahracter .',
-            'description.max'=>'The Description Must Be Under  255 .'
+            'description.string' => 'The Description Must Be String .',
+            'description.min' => 'The Description Must Be Over 2 Cahracter .',
+            'description.max' => 'The Description Must Be Under  255 .'
         ];
     }
 

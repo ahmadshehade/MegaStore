@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Modules\PaymentManagement\Http\Requests\Api\V1\Payments\StorePaymentRequest;
-use Modules\PaymentManagement\Http\Requests\Api\V1\Payments\UpdatePaymentRequest;
 use Modules\PaymentManagement\Models\Payment;
 use Modules\PaymentManagement\Notifications\MakePaymentNotification;
 use Modules\PaymentManagement\Services\PaymentService;

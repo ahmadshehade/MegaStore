@@ -4,7 +4,6 @@ namespace Modules\ProductManagement\Http\Requests\Api\V1\Attributes;
 
 use App\Enum\UserRoles;
 use App\Http\Requests\BaseRequest;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;

@@ -8,19 +8,17 @@ use App\Traits\CacheTrait;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\HttpClientException;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Modules\OrderManagement\Models\Order;
 use Modules\PaymentManagement\Emails\Payments\MakeNewPaymentMail;
 use Modules\PaymentManagement\Models\Invoice;
 use Modules\PaymentManagement\Models\LedgerEntry;
 use Modules\PaymentManagement\Models\Payment;
 use Modules\PaymentManagement\Models\PaymentMethod;
-use Modules\PaymentManagement\Models\Refund;
+
 
 class PaymentService extends BaseService
 {

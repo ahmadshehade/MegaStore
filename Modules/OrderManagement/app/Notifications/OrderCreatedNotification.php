@@ -3,10 +3,7 @@
 namespace Modules\OrderManagement\Notifications;
 
 use App\Notifications\BaseNotification;
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
+
 
 class OrderCreatedNotification extends BaseNotification
 {

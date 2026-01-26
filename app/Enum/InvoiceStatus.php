@@ -2,6 +2,9 @@
 
 namespace App\Enum;
 
+/**
+ * Summary of InvoiceStatus
+ */
 enum InvoiceStatus: string
 {
 

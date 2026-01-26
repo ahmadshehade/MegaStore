@@ -2,6 +2,9 @@
 
 namespace App\Enum;
 
+/**
+ * Summary of OrderStatus
+ */
 enum OrderStatus: string
 {
     case Pending = "pending";

@@ -4,7 +4,6 @@ namespace Modules\ProductManagement\Rules;
 
 use Closure;
 use Illuminate\Contracts\Validation\Rule;
-use Illuminate\Contracts\Validation\ValidationRule;
 
 class Decimal122Rule implements Rule
 {

@@ -3,8 +3,6 @@
 
 namespace Modules\OrderManagement\Services;
 
-use App\Enum\UserRoles;
-use App\Models\User;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use Illuminate\Database\Eloquent\Model;
@@ -12,14 +10,8 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Notification;
-use Modules\OrderManagement\Emails\OverPaymentMail;
-use Modules\OrderManagement\Notifications\OrderCreatedNotification;
 use Modules\OrderManagement\DataTransferObjects\OrderItemProcessor;
 use Modules\OrderManagement\Models\Order;
-use Modules\OrderManagement\Notifications\OverPaymentNotification;
 use Modules\PaymentManagement\Services\InvoiceService;
 use Modules\PaymentManagement\Services\LedgerEntryService;
 use Throwable;
@@ -139,7 +131,7 @@ class OrderService extends BaseService
             }
             $order = parent::update($data, $model);
             $invoice = $this->invoice->updateInvoice($model);
-             
+
             $this->ledgerEntry->reviseInvoiceEntry($invoice);
             if ($flag) {
                 $this->ledgerEntry->overPaymentEntry($overPayment, $order->customer,$order);

@@ -4,13 +4,10 @@ namespace Modules\ProductManagement\Models;
 
 use App\Models\Base\BaseModel;
 use Database\Factories\CategoryFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
-use Predis\Command\Traits\Weights;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 // use Modules\ProductManagement\Database\Factories\CategoryFactory;
 

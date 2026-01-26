@@ -2,6 +2,9 @@
 
 namespace App\Enum;
 
+/**
+ * Summary of EntryType
+ */
 enum EntryType: string
 {
     case Invoice = "invoice";

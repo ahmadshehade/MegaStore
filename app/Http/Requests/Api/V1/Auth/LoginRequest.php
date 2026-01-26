@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Api\V1\Auth;
 
 use App\Http\Requests\BaseRequest;
-use Illuminate\Foundation\Http\FormRequest;
+
 
 class LoginRequest extends BaseRequest
 {
@@ -15,7 +15,7 @@ class LoginRequest extends BaseRequest
         return true;
     }
 
-   
+
 
     /**
      * Validation rules.
@@ -42,12 +42,12 @@ class LoginRequest extends BaseRequest
     public function messages(): array
     {
         return [
-         
+
             // Email
             'email.required' => 'Email is required.',
             'email.email'    => 'Please provide a valid email address.',
             'email.exists'=>'Email Must Be In Users Email',
-            
+
 
             // Password
             'password.required'  => 'Password is required.',

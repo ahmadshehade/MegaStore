@@ -5,7 +5,6 @@ namespace Modules\OrderManagement\Models;
 use App\Models\Base\BaseModel;
 use App\Models\User;
 use Database\Factories\DiscountFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;

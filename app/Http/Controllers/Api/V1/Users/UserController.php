@@ -11,7 +11,13 @@ use Illuminate\Http\Request;
 class UserController extends Controller
 {
     protected $userService;
-    public function __construct(UserService $userService){
+
+    /**
+     * Summary of __construct
+     * @param UserService $userService
+     */
+    public function __construct(UserService $userService)
+    {
         $this->userService = $userService;
     }
     /**
@@ -19,11 +25,11 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $options=$request->only(keys: ['name','email']);
-        $users=$this->userService->getAll($options);
+        $options = $request->only(keys: ['name', 'email']);
+        $users = $this->userService->getAll($options);
         return $this->SuccessMessage([
-            'data'=>$users,
-        ],'Successfully Get All Users.',200);
+            'data' => $users,
+        ], 'Successfully Get All Users.', 200);
     }
 
     /**
@@ -39,22 +45,22 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $data=$this->userService->get($user);
-       return $this->SuccessMessage([
-            'data'=>$data,
-        ],'Successfully Get User.',200);
+        $data = $this->userService->get($user);
+        return $this->SuccessMessage([
+            'data' => $data,
+        ], 'Successfully Get User.', 200);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(User $user,UpdateUserRequest $request)
+    public function update(User $user, UpdateUserRequest $request)
     {
 
-        $data=$this->userService->update($user,$request->validated());
+        $data = $this->userService->update($user, $request->validated());
         return $this->SuccessMessage([
-               'data'=>$user->load(['permissions','roles'])
-        ],'Successfully Update User .',200);
+            'data' => $user->load(['permissions', 'roles'])
+        ], 'Successfully Update User .', 200);
     }
 
     /**
@@ -62,9 +68,9 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        $data= $this->userService->destroy( $user );
+        $data = $this->userService->destroy($user);
         return $this->SuccessMessage([
             true
-        ],'Successfully Delete User',200);
+        ], 'Successfully Delete User', 200);
     }
 }

@@ -4,11 +4,9 @@ namespace Modules\ProductManagement\Models;
 
 use App\Models\Base\BaseModel;
 use Database\Factories\ProductVaraintFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Illuminate\Database\Eloquent\Factories\Factory\ProductVariantsFactory;
 use Modules\OrderManagement\Models\OrderItem;
 
 class ProductVariant extends BaseModel implements HasMedia

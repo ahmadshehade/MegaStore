@@ -4,7 +4,6 @@ namespace Modules\OrderManagement\Http\Requests\Api\V1\Orders;
 
 use App\Enum\UserRoles;
 use App\Http\Requests\BaseRequest;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use Illuminate\Support\Arr;

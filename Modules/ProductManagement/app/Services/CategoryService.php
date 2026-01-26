@@ -5,7 +5,6 @@ namespace Modules\ProductManagement\Services;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use App\Traits\HandleMediaUploads;
-use GuzzleHttp\Psr7\UploadedFile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;

@@ -2,15 +2,12 @@
 
 namespace Modules\OrderManagement\Models;
 
-use App\Enum\InvoiceStatus;
+
 use App\Models\Base\BaseModel;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use Modules\OrderManagement\Models\Scopes\OrderScope;
 use Modules\PaymentManagement\Models\Invoice;
-
 use Modules\OrderManagement\Models\OrderItem;
 use Modules\OrderManagement\Models\OrderDiscountHistory;
 use Modules\OrderManagement\Models\Discount;

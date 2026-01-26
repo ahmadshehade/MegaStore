@@ -6,7 +6,6 @@ use App\Models\Base\BaseModel;
 use Database\Factories\PaymentMethodFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
-use Modules\OrderManagement\Models\Order;
 
 class PaymentMethod extends BaseModel
 {

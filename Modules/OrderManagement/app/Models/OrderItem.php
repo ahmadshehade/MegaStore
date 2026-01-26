@@ -4,10 +4,9 @@ namespace Modules\OrderManagement\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\ProductManagement\Models\Product;
 use Modules\ProductManagement\Models\ProductVariant;
 
-// use Modules\OrderManagement\Database\Factories\OrderItemFactory;
+
 
 class OrderItem extends Model
 {

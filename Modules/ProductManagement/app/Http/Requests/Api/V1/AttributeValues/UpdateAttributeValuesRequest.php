@@ -5,7 +5,6 @@ namespace Modules\ProductManagement\Http\Requests\Api\V1\AttributeValues;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\ProductManagement\Models\AttributeValue;
 
 class UpdateAttributeValuesRequest extends FormRequest
 {

@@ -4,7 +4,7 @@ namespace Modules\OrderManagement\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-// use Modules\OrderManagement\Database\Factories\OrderDiscountHistoryFactory;
+
 
 class OrderDiscountHistory extends Model
 {

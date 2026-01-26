@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Modules\ProductManagement\Models\Attribute;
+
 
 class UpdateAttributeRequest extends FormRequest
 {
@@ -113,7 +113,7 @@ class UpdateAttributeRequest extends FormRequest
             'values.*.label.max'    => 'Each label may not exceed :max characters.',
 
             'is_active.boolean' => 'The active status must be true or false.',
-            
+
             'variant_values.array' => 'variant_values must be an associative array of product_variant_id => attribute_value_id.',
             'variant_values.*.integer' => 'Each variant value must be an integer ID of attribute_value.',
             'variant_values.*.exists'  => 'One of the provided attribute_value ids does not exist.',

@@ -5,7 +5,6 @@ namespace Modules\ProductManagement\Http\Requests\Api\V1\ProductVariants;
 use App\Http\Requests\BaseRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\ProductManagement\Models\ProductVariant;
 use Modules\ProductManagement\Rules\Decimal122Rule;
 use Modules\ProductManagement\Rules\Decimal82Rule;
 
