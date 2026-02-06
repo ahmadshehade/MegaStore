@@ -3,6 +3,7 @@
 namespace Modules\ProductManagement\Services;
 
 use App\Services\BaseService;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -26,15 +27,15 @@ class AttributeValuesService extends BaseService{
      * @param array $filters
      * @return iterable
      */
-    public function getAll(array $filters = []): iterable
-    {
-        $user=Auth::user();
+   public  function  getAll(array $filters = [], ?Closure $scope = null): iterable
+   {
+       $user=Auth::user();
         $userKey=$user?$user->id.implode(",",$user->roles->pluck("name")->toArray()):"guest";
         $cacheKey="attributes_".$userKey.((!empty($filters)?md5(json_encode($filters)):""));
         return Cache::remember($cacheKey,now()->addHour(), function () use ($filters) {
             return parent::getAll($filters)->load('attribute');
         });
-    }
+   }
 
 
 
@@ -75,7 +76,7 @@ class AttributeValuesService extends BaseService{
      * @return bool
      */
     public function destroy(Model $model): bool{
-      
+
         return parent::destroy($model);
     }
 

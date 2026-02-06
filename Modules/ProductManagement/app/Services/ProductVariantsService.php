@@ -5,6 +5,7 @@ namespace Modules\ProductManagement\Services;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use App\Traits\HandleMediaUploads;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -28,7 +29,7 @@ class ProductVariantsService extends BaseService
      * @param array $filters
      * @return iterable
      */
-    public function getAll(array $filters = []): iterable
+    public function getAll(array $filters = [], ?Closure $scope = null): iterable
     {
         $user = Auth::user();
         $userKey = $user ? $user->id . implode(",", $user->roles->pluck('name')->toArray()) : "guest";

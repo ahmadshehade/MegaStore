@@ -5,6 +5,7 @@ namespace Modules\PaymentManagement\Services;
 use App\Models\User;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
+use Closure;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\HttpClientException;
@@ -38,15 +39,23 @@ class PaymentService extends BaseService
     /**
      * Summary of getAll
      * @param array $filters
-     * @return Model[]|\Traversable<int|string, Model>
+     * @param mixed $scope
+     * @return iterable
      */
-    public function  getAll(array $filters = []): iterable
+    public function  getAll(array $filters = [], ?Closure $scope = null): iterable
     {
-        $user = Auth::user();
+           $user = Auth::user();
         $userKey = $user ? $user->id . "_" . implode($user->roles()->pluck('name')->toArray()) : "guest";
         $cacheKey = $userKey . ((empty($filters)) ? "" : md5(json_encode($filters)));
-        return Cache::tags(['payments'])->remember($cacheKey, now()->addMinute(), function () use ($filters) {
-            return parent::getAll($filters)->load(['invoice', 'invoice.refunds', 'paymentMethod', 'ledgerEntries']);
+        return Cache::tags(['payments'])->remember($cacheKey, now()->addMinute(), function () use ($filters,$user) {
+            return parent::getAll($filters,function ($query) use ($user) {
+                if($user){
+                    $query->visibleFor($user);
+                }else{
+                    $query->whereKey(Null);
+                }
+                return $query->with(['invoice', 'invoice.refunds', 'paymentMethod', 'ledgerEntries']);
+            });
         });
     }
 

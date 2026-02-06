@@ -4,6 +4,7 @@ namespace Modules\OrderManagement\Services;
 
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -26,7 +27,7 @@ class DiscountService extends BaseService
      * @param array $filters
      * @return Model[]|\Traversable<int|string, Model>
      */
-    public function getAll(array $filters = []): iterable
+    public function getAll(array $filters = [], ?Closure $scope = null): iterable
     {
         $user = Auth::user();
         $userKey = $user ? $user->id : 'non';
@@ -80,6 +81,4 @@ class DiscountService extends BaseService
         $this->cacheFlush('discounts');
         return parent::destroy($model);
     }
-
- 
 }

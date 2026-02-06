@@ -13,6 +13,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\OrderManagement\Models\Discount;
 use Modules\OrderManagement\Models\Order;
+use Modules\OrderManagement\Models\ProductReview;
 use Modules\PaymentManagement\Models\LedgerEntry;
 use Modules\PaymentManagement\Models\Payment;
 use Modules\ProductManagement\Models\Attribute;
@@ -22,7 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens, HasRoles,TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, HasApiTokens, HasRoles, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -112,24 +113,27 @@ class User extends Authenticatable
      * Summary of orders
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<Order, User>
      */
-    public function orders(){
-        return  $this->hasMany(Order::class,'customer_id');
+    public function orders()
+    {
+        return  $this->hasMany(Order::class, 'customer_id');
     }
 
     /**
      * Summary of payments
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<Payment, User>
      */
-    public function payments(){
-        return $this->hasMany(Payment::class,'customer_id');
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'customer_id');
     }
 
     /**
      * Summary of ledgerEntries
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<LedgerEntry, User>
      */
-    public function ledgerEntries(){
-        return $this->hasMany(LedgerEntry::class,'customer_id');
+    public function ledgerEntries()
+    {
+        return $this->hasMany(LedgerEntry::class, 'customer_id');
     }
 
     /**
@@ -145,5 +149,12 @@ class User extends Authenticatable
         );
     }
 
-
+    /**
+     * Summary of productReviews
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<ProductReview, User>
+     */
+    public function productReviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
 }

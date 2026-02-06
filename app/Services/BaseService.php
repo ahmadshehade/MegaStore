@@ -7,7 +7,6 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use App\Exceptions\CrudException;
 use App\Interfaces\BaseInterface;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -92,21 +91,31 @@ abstract class BaseService implements BaseInterface
     }
 
     /**
-     * Get all records with optional filters.
+     * Get all records with optional filters and optional scope.
      *
      * @param array $filters
+     * @param Closure|null $scope
      * @return iterable<Model>
      */
-    public function getAll(array $filters = []): iterable
+    public function getAll(array $filters = [], ?Closure $scope = null): iterable
     {
-        return $this->handle(function () use ($filters) {
+        return $this->handle(function () use ($filters, $scope) {
+
             $query = $this->model->newQuery();
-            if ($filters != []) {
+
+            if (!empty($filters)) {
                 $this->applyFilters($query, $filters);
             }
+
+
+            if ($scope instanceof Closure) {
+                $scope($query);
+            }
+
             return $query->get();
         });
     }
+
 
 
     /**

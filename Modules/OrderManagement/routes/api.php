@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Modules\OrderManagement\Http\Controllers\Api\V1\Discount\DiscountController;
 use Modules\OrderManagement\Http\Controllers\Api\V1\Order\OrderController;
-use Modules\OrderManagement\Http\Controllers\OrderManagementController;
+use Modules\OrderManagement\Http\Controllers\Api\V1\ProductReview\ProductReviewController;
+
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
@@ -11,14 +12,14 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
      * -------------------------------
      * Discount Management Routes
      * -------------------------------
-     * This route group handles all operations related to discounts.
-     * Only users with the 'admin-job' permission can access these endpoints.
-     * Endpoints:
-     *   - GET /discounts          => List all discounts
-     *   - POST /discounts         => Create a new discount
-     *   - GET /discounts/{id}     => Retrieve a single discount by ID
-     *   - POST /discounts/{id}    => Update an existing discount
-     *   - DELETE /discounts/{id}  => Delete a discount
+     * Group of routes to manage discounts.
+     * Access restricted to users with 'admin-job' permission.
+     * CRUD operations are supported:
+     *   - index()   => List all discounts
+     *   - store()   => Create a new discount
+     *   - show()    => Retrieve a specific discount
+     *   - update()  => Update an existing discount
+     *   - destroy() => Delete a discount
      */
     Route::middleware(['can:admin-job'])->prefix('/discounts')->group(function () {
         Route::get('/', [DiscountController::class, 'index'])
@@ -37,20 +38,42 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
      * -------------------------------
      * Order Management Routes
      * -------------------------------
-     * This route group handles all operations related to orders.
-     * Endpoints:
-     *   - GET /orders          => List all orders
-     *   - POST /orders         => Create a new order
-     *   - GET /orders/{id}     => Retrieve a single order by ID
-     *   - POST /orders/{id}    => Update an existing order
-     *   - DELETE /orders/{id}  => Delete an order
+     * Routes to handle all order-related operations.
+     * Includes creating, updating, deleting, and viewing orders.
+     * Additional endpoint for order history retrieval.
      */
     Route::prefix('/orders')->group(function () {
-        Route::get('/', [OrderController::class,'index'])->name('orders.all');
-        Route::post('/', [OrderController::class,'store'])->name('order.store');
-        Route::get('/{order}',[OrderController::class,'show'])->name('orders.show');
-        Route::post('/{order}',[OrderController::class,'update'])->name('order.update');
-        Route::delete('/{order}',[OrderController::class,'destroy'])->name('order.detroy');
-        Route::get('/history/{order}',[OrderController::class,'getOrderHistory'])->name('order.discounts');
+        Route::get('/', [OrderController::class, 'index'])
+            ->name('orders.all');
+        Route::post('/', [OrderController::class, 'store'])
+            ->name('order.store');
+        Route::get('/{order}', [OrderController::class, 'show'])
+            ->name('orders.show');
+        Route::post('/{order}', [OrderController::class, 'update'])
+            ->name('order.update');
+        Route::delete('/{order}', [OrderController::class, 'destroy'])
+            ->name('order.detroy');
+        Route::get('/history/{order}', [OrderController::class, 'getOrderHistory'])
+            ->name('order.discounts');
+    });
+
+    /**
+     * -------------------------------
+     * Product Review Routes
+     * -------------------------------
+     * Routes for managing product reviews.
+     * Supports CRUD operations for product feedback.
+     */
+    Route::prefix('/productReviews')->group(function () {
+        Route::get('/', [ProductReviewController::class, 'index'])
+            ->name('reviews.all');
+        Route::get('/{productReview}', [ProductReviewController::class, 'show'])
+            ->name('review.get');
+        Route::post('/', [ProductReviewController::class, 'store'])
+            ->name('review.make');
+        Route::put('/{productReview}', [ProductReviewController::class, 'update'])
+            ->name('review.update');
+        Route::delete('/{productReview}', [ProductReviewController::class, 'destroy'])
+            ->name('review.delete');
     });
 });

@@ -5,6 +5,7 @@ namespace Modules\ProductManagement\Services;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use App\Traits\HandleMediaUploads;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -27,16 +28,16 @@ class CategoryService extends BaseService
      * @param array $filters
      * @return iterable
      */
-    public function getAll(array $filters = []): iterable
-    {
-        $user = Auth::user();
+   public  function getAll(array $filters = [], ?Closure $scope = null): iterable
+   {
+       $user = Auth::user();
         $userkey = $user ? $user->id . "_" . implode(',', $user->roles->pluck('name')->toArray()) : 'guest';
         $cacheKey = "categories_" . $userkey . (empty($filters) ? "" : "_" . md5(json_encode($filters)));
         return Cache::tags(['categories'])->remember($cacheKey, now()->addHour(), function () use ($filters) {
              $categories = parent::getAll($filters);
               return $categories->load(['parent', 'children', 'media']);
         });
-    }
+   }
     /**
      * Summary of store
      * @param array $data

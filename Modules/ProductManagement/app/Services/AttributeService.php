@@ -4,6 +4,7 @@ namespace Modules\ProductManagement\Services;
 
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
+use Closure;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -30,9 +31,9 @@ class AttributeService extends BaseService
      * @param array $filters
      * @return \Illuminate\Database\Eloquent\Model[]|\Traversable<int|string, \Illuminate\Database\Eloquent\Model>
      */
-    public function getAll(array $filters = []): iterable
+    public  function getAll(array $filters = [], ?Closure $scope = null): iterable
     {
-        $user = Auth::user();
+            $user = Auth::user();
         $userKey = $user ? $user->id . '_' . (implode(',', $user->roles->pluck('name')->toArray())) : "guest";
         $cacheKey = "Attributes_" . $userKey . (!empty($filters) ? md5(json_encode($filters)) : "*");
         return Cache::tags(['attributes'])->remember($cacheKey, now()->addHour(), function () use ($filters) {

@@ -3,6 +3,7 @@
 namespace Modules\PaymentManagement\Services;
 
 use App\Services\BaseService;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -18,7 +19,14 @@ class RefundService extends BaseService
     {
         return parent::__construct($model);
     }
-    public function getAll(array $filters = []): iterable
+
+    /**
+     * Summary of getAll
+     * @param array $filters
+     * @param mixed $scope
+     * @return iterable
+     */
+    public function getAll(array $filters = [], ?Closure $scope = null): iterable
     {
         $user = Auth::user();
         $userKey = $user ? $user->id . implode($user->roles()->pluck('name')->toArray()) : "guest";
@@ -38,8 +46,4 @@ class RefundService extends BaseService
         return parent::get($model)
             ->load(['payment', 'invoice', 'ledgerEntries']);
     }
-
-   
-
-
 }

@@ -5,6 +5,7 @@ namespace Modules\ProductManagement\Services;
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
 use App\Traits\HandleMediaUploads;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -29,8 +30,8 @@ class ProductService extends BaseService
      * @param array $filters
      * @return iterable
      */
-    public  function getAll(array $filters = []): iterable
-    {
+   public function getAll(array $filters = [], ?Closure $scope = null): iterable
+   {
         $user = Auth::user();
         if ($user) {
             $rolesString = collect($user->roles->pluck('name'))->implode(',');
@@ -42,7 +43,7 @@ class ProductService extends BaseService
         return Cache::tags(['products'])->remember($cacheKey, now()->addHour(), function () use ($filters) {
             return parent::getAll($filters)->load(['creator', 'category', 'media']);
         });
-    }
+   }
 
 
     /**

@@ -3,6 +3,7 @@
 namespace Modules\PaymentManagement\Services;
 
 use App\Services\BaseService;
+use Closure;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -34,12 +35,12 @@ class InvoiceService extends BaseService
     /**
      * Get all invoices with caching
      */
-    public function getAll(array $filters = []): iterable
+    public  function getAll(array $filters = [], ?Closure $scope = null): iterable
     {
-        $user     = Auth::user();
+            $user     = Auth::user();
         $userId   = $user?->id ?? 'guest';
         $roles = $user
-            ? implode('_', array: $user->getRoleNames()->toArray())
+            ? $user->id.implode('_', array: $user->getRoleNames()->toArray())
             : 'guest';
 
         $cacheKey = "invoices:{$userId}:{$roles}:" . md5(json_encode($filters));
@@ -104,11 +105,11 @@ class InvoiceService extends BaseService
     /**
      * Get single trashed invoice
      */
-    public function getTrashedInvoice(int $invoiceId): Invoice
+    public function getTrashedInvoice( Model $model): Invoice
     {
         return Invoice::onlyTrashed()
-            ->with(['order', 'payments', 'refunds', 'ledgerEntries'])
-            ->findOrFail($invoiceId);
+        ->with(['order', 'payments', 'refunds', 'ledgerEntries'])
+        ->where('id', $model->id)->firstOrFail();
     }
 
 

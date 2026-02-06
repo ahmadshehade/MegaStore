@@ -44,19 +44,19 @@ class InvoiceController extends Controller
     public function getTrashedInvoices(Request  $request)
     {
         $filters = $request->only(['status', 'order_id', 'invoice_number']);
-        $invoices = $this->invoice->getTrashedInvoice($filters);
+        $invoices = $this->invoice->getTrashedInvoices($filters);
         return $this->SuccessMessage(['invoices' => $invoices], 'Successfully Get All  Trashed Invoice.', 200);
     }
 
     /**
      * Summary of getTrashedInvoice
-     * @param int $invoice
+     * @param Invoice $invoice
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getTrashedInvoice(int $invoice)
+    public function getTrashedInvoice(Invoice $invoice)
     {
 
-        $data = $this->invoice->getTrashInvoice($invoice);
+        $data = $this->invoice->getTrashedInvoice($invoice);
         return $this->SuccessMessage(['invoices' => $data], 'Successfully   Trashed Invoice.', 200);
     }
 }

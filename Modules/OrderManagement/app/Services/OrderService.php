@@ -5,6 +5,7 @@ namespace Modules\OrderManagement\Services;
 
 use App\Services\BaseService;
 use App\Traits\CacheTrait;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
@@ -41,25 +42,32 @@ class OrderService extends BaseService
      * @param array $filters
      * @return iterable
      */
-    public function getAll(array $filters = []): iterable
+    public function getAll(array $filters = [], ?Closure $scope = null): iterable
     {
         $user = Auth::user();
         $userKey = $user
             ? $user->id . "_" . implode('_', $user->getRoleNames()->toArray())
             : 'guest';
         $cacheKey = "Orders_" . $userKey . "_" . ((empty($filters) ? "" : md5(json_encode($filters))));
-        return Cache::tags(['orders'])->remember($cacheKey, now()->addMinute(), function () use ($filters) {
-            return parent::getAll($filters)->load([
-                'items',
+        return Cache::tags(['orders'])->remember($cacheKey, now()->addMinute(), function () use ($filters,$user) {
+            return parent::getAll($filters,function($query)use($user){
+                if($user){
+                    $query->visibleFor($user);
+                }else{
+               $query->whereKey(null);
+                }
+                return  $query->with(['items',
                 'customer',
                 'discounts',
                 'histories',
                 'invoice',
-                'ledgerEntries' => function ($q) {
-                    $q->visibleFor(Auth::user());
-                }
-            ]);
+                'ledgerEntries' => function ($q) use($user) {
+                    $q->visibleFor($user);
+                }]);
+            });
+
         });
+
     }
 
     /**
@@ -73,6 +81,7 @@ class OrderService extends BaseService
     public function store(array $data): Model
     {
         return DB::transaction(function () use ($data) {
+            $user=Auth::user();
             $data['customer_id'] = Auth::id();
             $data['tot_amount'] = $this->makeTotAmount->makeTotAmount($data);
             $order = parent::store($data);
@@ -90,8 +99,8 @@ class OrderService extends BaseService
                 'items',
                 'discounts',
                 'invoice',
-                'ledgerEntries' => function ($q) {
-                    $q->visibleFor(Auth::user());
+                'ledgerEntries' => function ($q)use($user) {
+                    $q->visibleFor($user);
                 }
             ]);
         });
@@ -108,6 +117,7 @@ class OrderService extends BaseService
     public function update(array $data, $model): Model
     {
         return DB::transaction(function () use ($data, $model) {
+            $user=Auth::user();
             $invoice = $model->invoice;
             if ($invoice && $invoice->status === 'paid') {
                 throw new HttpResponseException(response()->json(['message' => 'Invoice Order is Paid .']));
@@ -143,8 +153,8 @@ class OrderService extends BaseService
                 'items',
                 'discounts',
                 'invoice',
-                'ledgerEntries' => function ($q) {
-                    $q->visibleFor(Auth::user());
+                'ledgerEntries' => function ($q) use($user) {
+                    $q->visibleFor($user);
                 }
             ]);
         });
@@ -159,13 +169,14 @@ class OrderService extends BaseService
      */
     public function get(Model $model): Model
     {
+        $user=Auth::user();
         $order = parent::get($model);
         return $order->load([
             'items',
             'discounts',
             'invoice',
-            'ledgerEntries' => function ($q) {
-                $q->visibleFor(Auth::user());
+            'ledgerEntries' => function ($q) use($user) {
+                $q->visibleFor($user);
             }
         ]);
     }
@@ -178,6 +189,7 @@ class OrderService extends BaseService
      */
     public function destroy(Model $order): bool
     {
+
         $this->cacheFlushMultiple();
         $success = parent::destroy($order);
         return $success;

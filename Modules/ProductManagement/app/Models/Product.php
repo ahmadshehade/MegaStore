@@ -7,6 +7,7 @@ use App\Models\User;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
+use Modules\OrderManagement\Models\ProductReview;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -58,7 +59,8 @@ class Product extends BaseModel implements HasMedia
      * @param mixed $value
      * @return string
      */
-    public function getShortDescriptionAttribute($value){
+    public function getShortDescriptionAttribute($value)
+    {
         return Str::ucwords($value);
     }
 
@@ -68,7 +70,8 @@ class Product extends BaseModel implements HasMedia
      * @param mixed $value
      * @return void
      */
-    public function setShortDescriptionAttribute($value){
+    public function setShortDescriptionAttribute($value)
+    {
         $this->attributes['short_description'] = strtolower($value);
     }
 
@@ -77,7 +80,8 @@ class Product extends BaseModel implements HasMedia
      * @param mixed $value
      * @return string
      */
-    public function getDescriptionAttribute($value){
+    public function getDescriptionAttribute($value)
+    {
         return Str::ucwords($value);
     }
 
@@ -86,7 +90,8 @@ class Product extends BaseModel implements HasMedia
      * @param mixed $value
      * @return void
      */
-    public function setDescriptionAttribute($value){
+    public function setDescriptionAttribute($value)
+    {
         $this->attributes['description'] = strtolower($value);
     }
 
@@ -137,5 +142,20 @@ class Product extends BaseModel implements HasMedia
         return new ProductFactory();
     }
 
-
+    /**
+     * Summary of reviews
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<ProductReview, Product>
+     */
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+    /**
+     * Summary of approvedReviews
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<ProductReview, Product>
+     */
+    public function approvedReviews()
+    {
+        return $this->hasMany(ProductReview::class)->where('is_approved', true);
+    }
 }

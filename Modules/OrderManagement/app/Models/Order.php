@@ -2,7 +2,7 @@
 
 namespace Modules\OrderManagement\Models;
 
-
+use App\Enum\UserRoles;
 use App\Models\Base\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -73,8 +73,6 @@ class Order extends BaseModel
     public function invoice()
     {
         return $this->hasOne(Invoice::class, 'order_id');
-
-
     }
 
 
@@ -90,12 +88,37 @@ class Order extends BaseModel
             });
     }
 
+
+
     /**
-     * Summary of booted
-     * @return void
+     * Summary of productReviews
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<ProductReview, Order>
      */
-    protected static function booted()
+    public function productReviews()
     {
-        static::addGlobalScope(new OrderScope);
+        return $this->hasMany(ProductReview::class);
+    }
+
+    /**
+     * Summary of scopeVisibleFor
+     * @param mixed $query
+     * @param mixed $user
+     */
+    public  function  scopeVisibleFor($query, $user)
+    {
+
+
+        if ($user->hasRole(UserRoles::SuperAdmin->value)) {
+            return  $query;
+        }
+        if ($user->hasRole(UserRoles::Seller->value)) {
+            return $query->whereHas('items.productVariant.product', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            });
+        }
+        if ($user->hasRole(UserRoles::Customer->value)) {
+            return $query->where('customer_id', $user->id);
+        }
+        return $query->whereKey(null);
     }
 }

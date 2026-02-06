@@ -4,6 +4,7 @@ namespace Modules\PaymentManagement\Services;
 
 use App\Models\User;
 use App\Services\BaseService;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,8 @@ class LedgerEntryService extends BaseService
      * @param array $filters
      * @return iterable
      */
-    public function getAll(array $filters = []): iterable
+
+    public function getAll(array $filters = [], ?Closure $scope = null): iterable
     {
         $user = Auth::user();
         $userKey = $user
@@ -41,7 +43,7 @@ class LedgerEntryService extends BaseService
             now()->addMinute(),
             function () use ($filters) {
                 return parent::getAll($filters)
-                    ->load(['order', 'invoice', 'payment', 'refund']);
+                    ->with(['order', 'invoice', 'payment', 'refund']);
             }
         );
     }
