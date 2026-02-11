@@ -2,11 +2,12 @@
 
 namespace Modules\OrderManagement\Models;
 
+use App\Models\Base\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 
-class OrderDiscountHistory extends Model
+class OrderDiscountHistory extends BaseModel
 {
     use HasFactory;
 

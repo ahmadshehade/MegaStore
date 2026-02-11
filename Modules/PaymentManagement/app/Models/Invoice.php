@@ -2,11 +2,12 @@
 
 namespace Modules\PaymentManagement\Models;
 
+use App\Models\Base\BaseModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Invoice extends Model
+class Invoice extends BaseModel
 {
     use HasFactory, SoftDeletes;
 

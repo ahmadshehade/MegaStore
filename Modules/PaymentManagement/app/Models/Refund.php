@@ -2,10 +2,11 @@
 
 namespace Modules\PaymentManagement\Models;
 
+use App\Models\Base\BaseModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Refund extends Model
+class Refund extends BaseModel
 {
     use HasFactory;
 

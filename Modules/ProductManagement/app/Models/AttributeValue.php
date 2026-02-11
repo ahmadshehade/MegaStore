@@ -2,11 +2,12 @@
 
 namespace Modules\ProductManagement\Models;
 
+use App\Models\Base\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 // use Modules\ProductManagement\Database\Factories\AttributeValueFactory;
 
-class AttributeValue extends Model
+class AttributeValue extends BaseModel
 {
     use HasFactory;
 

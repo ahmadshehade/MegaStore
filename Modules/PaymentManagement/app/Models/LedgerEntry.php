@@ -4,11 +4,12 @@ namespace Modules\PaymentManagement\Models;
 
 use App\Enum\EntryType;
 use App\Enum\UserRoles;
+use App\Models\Base\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class LedgerEntry extends Model
+class LedgerEntry extends BaseModel
 {
     use HasFactory;
 

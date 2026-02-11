@@ -3,13 +3,14 @@
 namespace Modules\PaymentManagement\Models;
 
 use App\Enum\UserRoles;
+use App\Models\Base\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Modules\PaymentManagement\Models\Scopes\PaymentScope;
 use phpDocumentor\Reflection\Types\Null_;
 
-class Payment extends Model
+class Payment extends BaseModel
 {
     use HasFactory;
 

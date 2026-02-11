@@ -2,13 +2,14 @@
 
 namespace Modules\OrderManagement\Models;
 
+use App\Models\Base\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\ProductManagement\Models\ProductVariant;
 
 
 
-class OrderItem extends Model
+class OrderItem extends BaseModel
 {
     use HasFactory;
 
