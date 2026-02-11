@@ -1,5 +1,6 @@
 {
     "ProductManagement": true,
     "OrderManagement": true,
-    "PaymentManagement": true
+    "PaymentManagement": true,
+    "Dashboards": true
 }
