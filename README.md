@@ -1,60 +1,159 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+MegaStore — Modular Multi-Vendor Commerce Platform
+Short description
+MegaStore is a production-grade, modular multi-vendor eCommerce platform built with Laravel. It is organized into clear modules (ProductManagement, OrderManagement, PaymentManagement, Core) and provides features for product cataloging (variants & attributes), multi-seller order handling, invoicing and payments, ledger accounting, discounts, and role-aware dashboards (SuperAdmin, Seller, Customer).
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Key Features
+• Multi-vendor product catalog (Products, ProductVariants, Attributes, AttributeValues)
+• Order lifecycle supporting items from multiple sellers
+• Invoice & Payment lifecycle with Ledger entries (financial trail)
+• Discount engine and history tracking
+• Product reviews & approval workflow
+• Role based visibility via Scopes & Policies (Seller, Customer, SuperAdmin)
+• RESTful API (auth via Sanctum) and modular Service layer
 
-## About Laravel
+Modules
+• Core — Auth (Fortify), Users, Roles, 2FA, Base models, Global requests
+• ProductManagement — Products, Variants, Attributes, Categories, Media
+• OrderManagement — Orders, OrderItems, Discounts, OrderDiscountHistory, ProductReviews
+• PaymentManagement — Invoices, Payments, Refunds, LedgerEntries, PaymentMethods
+• Dashboards — Seller/Customer/Admin summary services & controllers
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Quick Install (development)
+git clone <repo>
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan storage:link
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+# optional
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+php artisan queue:work
 
-## Learning Laravel
+Database (Short schema summary)
+Main tables (core fields):
+• products: id, category_id, sku, name, slug, status, is_featured, meta, created_by, timestamps
+• product_variants: id, product_id, sku, price, stock_quantity, low_stock_threshold, weight, is_active, timestamps
+• attributes, attribute_values, variant_values (pivot)
+• categories
+• discounts, order_discounts, order_discount_history
+• orders: id, customer_id, tot_amount, status, shipping_address, timestamps
+• order_items: id, order_id, product_variant_id, unit_price, quantity, subtotal, meta, timestamps
+• invoices, payments (softDeletes), ledger_entries
+• product_reviews: with unique(product_id, user_id)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Eloquent relations (summary)
+• User → hasMany Product (created_by), has roles via Spatie.
+• Product → hasMany ProductVariant, belongsTo Category, hasMany ProductReview.
+• ProductVariant → belongsTo Product, belongsToMany Attribute via variant_values.
+• Order → belongsTo User (customer), hasMany OrderItem, hasOne Invoice, belongsToMany Discount.
+• OrderItem → belongsTo ProductVariant, belongsTo Order.
+• Invoice → belongsTo Order, hasMany Payment and LedgerEntry.
+• Payment → belongsTo Invoice, hasMany LedgerEntry.
+• LedgerEntry → belongsTo Order|Invoice|Payment|Refund and User (customer).
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Seller Dashboard — recommended content & queries
+KPIs
+• total_revenue (seller share)
+• total_orders
+• pending_orders
+• low_stock_count
+• avg_rating
+Example queries (Eloquent)
+Last 10 orders containing seller products:
+$orders = Order::whereHas('items.productVariant.product', function($q) use ($sellerId) {
+    $q->where('created_by', $sellerId);
+})
+->with(['items.productVariant.product','customer','invoice'])
+->latest()
+->take(10)
+->get();
+Low stock variants:
+$lowStock = ProductVariant::whereHas('product', fn($q) => $q->where('created_by', $sellerId))
+    ->where(function($q){
+$q->whereNotNull('low_stock_threshold')
+          ->whereColumn('stock_quantity','<=','low_stock_threshold');
+    })->orWhere('stock_quantity','<=',5)
+    ->with('product')
+    ->get();
+Seller revenue (payments completed):
+$revenue = Payment::where('status', 'completed')
+->whereHas('invoice.order.items.productVariant.product', fn($q) => $q->where('created_by', $sellerId))
+    ->sum('amount');
+Top selling products (DB query):
+$top = DB::table('order_items')
+->join('product_variants','order_items.product_variant_id','product_variants.id')
+->join('products','product_variants.product_id','products.id')
+->select('products.id','products.name', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.subtotal) as total_sales'))
+->where('products.created_by', $sellerId)
+->groupBy('products.id','products.name')
+->orderByDesc('total_qty')
+->limit(5)
+->get();
 
-## Laravel Sponsors
+Financial model & ledger
+• Every invoice/payment/refund should create ledger entries with entry_type (EntryType enum).
+• Use ledger_entries as the source of truth for accounting reports (debit/credit).
+• For seller payouts, either compute from order_items.subtotal (faster) or reconcile via ledger_entries (more precise).
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Best Practices & recommendations
+• Use scopeVisibleFor in queries to enforce data visibility for roles.
+• Snapshot product data (name, sku, price) inside order_items.meta when order is created.
+• Add DB indexes on frequently filtered columns (products.created_by, product_variants.product_id, order_items.product_variant_id, orders.customer_id, payments.invoice_id).
+• Eager load relations to avoid N+1 queries (e.g. with('items.productVariant.product','invoice','customer')).
+• Cache heavy aggregates for short durations (1-5 minutes).
+• Use soft deletes for invoices/payments when needed; maintain audit trail.
+• Tests: Feature tests for Dashboard endpoints, Unit tests for Scopes and Services.
+• Consider adding seller_id or target_user_id to ledger entries if you want direct seller accounting.
 
-### Premium Partners
+MegaStore — منصة تجارة إلكترونية متعددة البائعين (مبنية على Laravel)
+نبذة مختصرة
+MegaStore هو نظام تجارة إلكترونية متكامل ومنظم بموديولات: إدارة المنتجات، الطلبات، المدفوعات، ونظام لوحات التحكم. يدعم النظام منتجات بعدة متغيرات (variants)، نظام خصومات، فواتير ومدفوعات، وسجل محاسبي (ledger) لتتبع العمليات المالية. يوفر تحكم صلاحيات متقدم ويعزل بيانات كل بائع بحسب النطاق (scopes & policies).
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+الميزات الأساسية
+• كتالوج مرن: Products + ProductVariants + Attributes + AttributeValues
+• معالجة الطلبات والتي قد تحتوي عناصر من عدة بائعين
+• دورة فواتير (Invoice) ومدفوعات (Payment) مع قيود دفترية (LedgerEntries)
+• محرك خصومات وتسجيل تاريخ تطبيق الخصم
+• مراجعات المنتجات ونظام الموافقة
+• صلاحيات ومجالات رؤية مبنية على الأدوار (SuperAdmin, Seller, Customer)
+• API RESTful محمية (Sanctum) وطبقة Services للمنطق التجاري
 
-## Contributing
+الوحدات (Modules)
+• Core: المصادقة (Fortify)، المستخدمون، الأدوار، المصادقة الثنائية، BaseModel، Requests موحّدة
+• ProductManagement: المنتجات، المتغيرات، السمات، الأقسام، الوسائط
+• OrderManagement: الطلبات، عناصر الطلب، الخصومات، سجل خصم الطلب
+• PaymentManagement: الفواتير، المدفوعات، المرتجعات، قيود الدفتر، طرق الدفع
+• Dashboards: خدمات ومتحكمات لعرض KPIs لكل دور
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+تركيب سريع (بيئة التطوير)
+git clone <repo>
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan storage:link
 
-## Code of Conduct
+# اختياري
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+php artisan queue:work
 
-## Security Vulnerabilities
+ملخص الجداول الأساسية
+• products: الحقول الأساسية (id, category_id, sku, name, slug, status, is_featured, meta, created_by, timestamps)
+• product_variants: (id, product_id, sku, price, stock_quantity, low_stock_threshold, weight, is_active)
+• attributes, attribute_values, variant_values
+• categories
+• discounts, order_discounts, order_discount_history
+• orders: (id, customer_id, tot_amount, status, shipping_address)
+• order_items: (id, order_id, product_variant_id, unit_price, quantity, subtotal, meta)
+• invoices, payments (مع softDeletes)، ledger_entries
+• product_reviews مع قيد فريد (product_id, user_id)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# MegaStore
+علاقات Eloquent المهمة
+• المستخدم (User) يملك منتجات (created_by)؛ ويملك أدوار عبر Spatie.
+• المنتج (Product) له Variants والتقييمات وينتمي للقسم.
+• المتغير (ProductVariant) ينتمي إلى المنتج ويرتبط بالسمات عبر pivot variant_values.
+• الطلب (Order) يملك عناصر (OrderItem) ويملك فاتورة (Invoice) ويمكنه الربط مع خصومات.
+• عنصر الطلب (OrderItem) يشير إلى ProductVariant.
+• الفاتورة (Invoice) مرتبطة بالأمر (Order) وتملك مدفوعات وسجلات دفترية.
+• القيود الدفترية (LedgerEntry) تربط الأحداث المالية بالـ order/invoice/payment/refund و المستخدم.
