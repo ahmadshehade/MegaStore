@@ -2,6 +2,7 @@
 
 namespace Modules\Dashboards\Services;
 
+use Illuminate\Support\Facades\Auth;
 use Modules\OrderManagement\Models\Discount;
 use Modules\OrderManagement\Models\Order;
 use Modules\OrderManagement\Models\ProductReview;
@@ -19,6 +20,7 @@ class SuperAdminService
     public function getDashboard(): array
     {
         return [
+            'notifications'=>$this->getNotifications(),
             'total_products' => Product::count(),
             'inactive_products_count' => Product::where('status', '!=', 'active')->count(),
             'recent_inactive_products' => $this->getInActiveProducts(),
@@ -62,13 +64,13 @@ class SuperAdminService
      */
     public function getLowStockVariants()
     {
-        return ProductVariant::where(function($q){
+        return ProductVariant::where(function ($q) {
             $q->whereNotNull('low_stock_threshold')
-              ->whereColumn('stock_quantity', '<=', 'low_stock_threshold');
+                ->whereColumn('stock_quantity', '<=', 'low_stock_threshold');
         })->orWhere('stock_quantity', '<=', 5)
-          ->with('product')
-          ->take(10)
-          ->get();
+            ->with('product')
+            ->take(10)
+            ->get();
     }
 
     /**
@@ -129,5 +131,18 @@ class SuperAdminService
         $debits = LedgerEntry::sum('debit');
         $credits = LedgerEntry::sum('credit');
         return $debits - $credits;
+    }
+
+    /**
+     * Summary of getNotifications
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Notifications\DatabaseNotification>
+     */
+    public function getNotifications()
+    {
+        return Auth::user()
+            ->notifications()
+            ->latest()
+            ->take(10)
+            ->get();
     }
 }
