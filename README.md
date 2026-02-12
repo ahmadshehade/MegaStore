@@ -1,312 +1,250 @@
-# MegaStore — Modular Multi-Vendor Commerce Platform | منصة MegaStore — منصة تجارة إلكترونية متعددة البائعين
+# 🛍️ MegaStore — Modular Multi-Vendor E-Commerce Platform
+
+<div align="center">
+<img src="https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white">
+<img src="https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white">
+<img src="https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white">
+<img src="https://img.shields.io/badge/REST_API-009688?style=for-the-badge&logo=fastapi&logoColor=white">
+</div>
+
+**A production-grade, modular multi-vendor eCommerce platform built with Laravel.**
 
 ---
 
-## English Version
+## 📸 Project Preview
+<p align="center"><i>✨ Elegant multi-vendor architecture with complete separation of concerns</i></p>
 
-### Short Description
 
-**MegaStore** is a production-grade, modular multi-vendor eCommerce platform built with **Laravel**. It is organized into clear modules (ProductManagement, OrderManagement, PaymentManagement, Core) and provides features for product cataloging (variants & attributes), multi-seller order handling, invoicing & payments, ledger accounting, discounts, and role-aware dashboards (SuperAdmin, Seller, Customer).
 
-### Key Features
+┌─────────────────────────────────────────────┐
+│ MegaStore Platform │
+├─────────────┬─────────────┬───────────────┬────────────────┤
+│ Core │ Product │ Order │ Payment │
+│ Module │ Management │ Management │ Management │
+├─────────────┼─────────────┼───────────────┼────────────────┤
+│ • Auth/2FA │ • Products │ • Orders │ • Invoices │
+│ • Roles │ • Variants │ • Items │ • Payments │
+│ • Users │ • Attributes│ • Discounts │ • Ledger │
+│ • Policies │ • Categories│ • Reviews │ • Refunds │
+└─────────────┴─────────────┴───────────────┴────────────────┘
 
-- Multi-vendor product catalog (Products, ProductVariants, Attributes, AttributeValues)
-- Order lifecycle supporting items from multiple sellers
-- Invoice & Payment lifecycle with Ledger entries (financial trail)
-- Discount engine and history tracking
-- Product reviews & approval workflow
-- Role-based visibility via Scopes & Policies (Seller, Customer, SuperAdmin)
-- RESTful API (auth via Sanctum) and modular Service layer
 
-### Modules
+---
 
-- **Core** — Auth (Fortify), Users, Roles, 2FA, Base Models, Global Requests
-- **ProductManagement** — Products, Variants, Attributes, Categories, Media
-- **OrderManagement** — Orders, OrderItems, Discounts, OrderDiscountHistory, ProductReviews
-- **PaymentManagement** — Invoices, Payments, Refunds, LedgerEntries, PaymentMethods
-- **Dashboards** — Seller/Customer/Admin summary services & controllers
+## ✨ Features
 
-### Quick Install (Development)
+| 🛒 Multi-Vendor Catalog | 📦 Smart Order Management |
+|------------------------|--------------------------|
+| Products with variants & attributes | Multi-seller order splitting |
+| Category management | Discount engine & history |
+| SKU-based inventory | Order lifecycle tracking |
+| Media & gallery support | Product reviews & approval |
 
+| 💰 Financial Suite | 🎯 Role-Based Dashboards |
+|-------------------|------------------------|
+| Complete invoice lifecycle | SuperAdmin analytics |
+| Payment processing & refunds | Seller KPIs & revenue |
+| Double-entry ledger system | Customer order history |
+| Seller payout calculations | Real-time metrics |
+
+---
+
+## 📦 Modules Overview
+
+### 🎯 Core Module
+Authentication (Laravel Fortify), 2FA, role & permission management (Spatie), base models, global requests, and centralized policies.
+
+### 📱 Product Management
+Complete product catalog with variants, attributes, categories, and media. Designed for scalability and multi-vendor isolation.
+
+### 📋 Order Management
+Advanced order processing with discounts, multi-item handling, and a full review approval system.
+
+### 💳 Payment Management
+Invoices, payments, refunds, and a robust double-entry ledger system for accurate financial tracking.
+
+### 📊 Dashboards
+Role-specific dashboards with cached metrics and real-time KPIs for Admin, Seller, and Customer.
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
 ```bash
-git clone <repo>
+PHP ≥ 8.1 | Composer | MySQL ≥ 5.7 | Redis (optional)
+
+Installation
+# Clone the repository
+git clone https://github.com/yourusername/megastore.git
+cd megastore
+
+# Install dependencies
 composer install
+
+# Environment setup
 cp .env.example .env
 php artisan key:generate
+
+# Run migrations with seeders
 php artisan migrate --seed
+
+# Link storage
 php artisan storage:link
 
-# optional
+# Optional: Start queue worker
 php artisan queue:work
 
+# Run the application
+php artisan serve
 
-Database (Short Schema Summary)
+📊 Database Schema
+📁 Products & Variants
+products
+├── id, category_id, sku, name, slug
+├── status, is_featured, created_by
+└── meta (JSON)
 
-Main Tables (Core Fields):
+product_variants
+├── id, product_id, sku, price
+├── stock_quantity, low_stock_threshold
+└── weight, is_active
 
-products: id, category_id, sku, name, slug, status, is_featured, meta, created_by, timestamps
+📁 Orders & Payments
+orders
+├── id, customer_id, total_amount
+└── status, shipping_address
 
-product_variants: id, product_id, sku, price, stock_quantity, low_stock_threshold, weight, is_active, timestamps
+order_items
+├── id, order_id, product_variant_id
+├── unit_price, quantity, subtotal
+└── meta (snapshot data)
 
-attributes, attribute_values, variant_values (pivot)
+invoices & payments
+└── Full lifecycle with soft deletes
 
-categories
+📁 Ledger System
+ledger_entries
+├── id, entry_type, amount
+├── reference_type, reference_id
+├── user_id, description
+└── created_at (indexed)
 
-discounts, order_discounts, order_discount_history
+🔌 API Endpoints
+Method	Endpoint	Description	Auth
+GET	/api/products	List all products	Public
+POST	/api/products	Create product	Seller/Admin
+GET	/api/orders	User orders	Customer
+POST	/api/orders	Place order	Customer
+GET	/api/seller/kpi	Seller dashboard	Seller
+POST	/api/payments	Process payment	Customer
+📈 Seller Dashboard KPIs
+// Total Revenue (Seller Share)
+$revenue = Payment::where('status', 'completed')
+    ->whereHas('invoice.order.items.productVariant.product', fn($q) => $q->where('created_by', $sellerId))
+    ->sum('amount');
 
-orders: id, customer_id, tot_amount, status, shipping_address, timestamps
+// Recent Orders
+$orders = Order::whereHas('items.productVariant.product', fn($q) => $q->where('created_by', $sellerId))
+    ->with(['items.productVariant.product', 'customer', 'invoice'])
+    ->latest()
+    ->take(10)
+    ->get();
 
-order_items: id, order_id, product_variant_id, unit_price, quantity, subtotal, meta, timestamps
-
-invoices, payments (softDeletes), ledger_entries
-
-product_reviews (unique constraint: product_id + user_id)
-
-Eloquent Relations (Summary)
-
-User → hasMany Products (created_by), roles via Spatie
-
-Product → hasMany ProductVariants, belongsTo Category, hasMany ProductReviews
-
-ProductVariant → belongsTo Product, belongsToMany Attribute via variant_values
-
-Order → belongsTo User (customer), hasMany OrderItems, hasOne Invoice, belongsToMany Discounts
-
-OrderItem → belongsTo ProductVariant, belongsTo Order
-
-Invoice → belongsTo Order, hasMany Payments & LedgerEntries
-
-Payment → belongsTo Invoice, hasMany LedgerEntries
-
-LedgerEntry → belongsTo Order|Invoice|Payment|Refund and User (customer)
-
-Seller Dashboard — Recommended KPIs & Queries
-
-KPIs:
-
-Total Revenue (seller share)
-
-Total Orders
-
-Pending Orders
-
-Low Stock Count
-
-Average Rating
-
-Example Queries (Eloquent):
-
-Last 10 orders containing seller products:
-
-$orders = Order::whereHas('items.productVariant.product', function($q) use ($sellerId) {
-    $q->where('created_by', $sellerId);
-})
-->with(['items.productVariant.product','customer','invoice'])
-->latest()
-->take(10)
-->get();
-
-
-Low stock variants:
-
+// Low Stock Alerts
 $lowStock = ProductVariant::whereHas('product', fn($q) => $q->where('created_by', $sellerId))
-    ->where(function($q){
+    ->where(function($q) {
         $q->whereNotNull('low_stock_threshold')
-          ->whereColumn('stock_quantity','<=','low_stock_threshold');
-    })->orWhere('stock_quantity','<=',5)
+          ->whereColumn('stock_quantity', '<=', 'low_stock_threshold');
+    })
+    ->orWhere('stock_quantity', '<=', 5)
     ->with('product')
     ->get();
 
+// Top Selling Products
+$topProducts = DB::table('order_items')
+    ->join('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
+    ->join('products', 'product_variants.product_id', '=', 'products.id')
+    ->select(
+        'products.id',
+        'products.name',
+        DB::raw('SUM(order_items.quantity) as total_quantity'),
+        DB::raw('SUM(order_items.subtotal) as total_revenue')
+    )
+    ->where('products.created_by', $sellerId)
+    ->groupBy('products.id', 'products.name')
+    ->orderByDesc('total_quantity')
+    ->limit(5)
+    ->get();
 
-Seller revenue (completed payments):
+🏗️ Architecture Best Practices
 
-$revenue = Payment::where('status', 'completed')
-->whereHas('invoice.order.items.productVariant.product', fn($q) => $q->where('created_by', $sellerId))
-->sum('amount');
+Security & Scoping
 
+protected static function booted()
+{
+    static::addGlobalScope(new SellerScope);
+}
 
-Top selling products (DB query):
+public function view(User $user, Product $product)
+{
+    return $user->id === $product->created_by || $user->hasRole('admin');
+}
 
-$top = DB::table('order_items')
-->join('product_variants','order_items.product_variant_id','product_variants.id')
-->join('products','product_variants.product_id','products.id')
-->select('products.id','products.name', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.subtotal) as total_sales'))
-->where('products.created_by', $sellerId)
-->groupBy('products.id','products.name')
-->orderByDesc('total_qty')
-->limit(5)
-->get();
 
-Financial Model & Ledger
+Performance Optimization
 
-Every invoice/payment/refund creates ledger entries (entry_type enum)
+Index frequently queried columns (created_by, status, created_at)
 
-Ledger entries are the source of truth for accounting reports
+Eager load relations to prevent N+1
 
-Seller payouts can be computed via order_items.subtotal or reconciled via ledger_entries for precision
+Cache KPIs & settings (TTL 5-15 mins)
 
-Best Practices & Recommendations
+Use chunk() for large datasets
 
-Use scopeVisibleFor in queries to enforce role-based data visibility
+Data Integrity
 
-Snapshot product data (name, sku, price) inside order_items.meta
+Store product snapshots in order_items.meta
 
-Add DB indexes: products.created_by, product_variants.product_id, order_items.product_variant_id, orders.customer_id, payments.invoice_id
+Soft deletes for audit
 
-Eager load relations (with('items.productVariant.product','invoice','customer')) to prevent N+1 queries
+Unique constraints (product_id + user_id for reviews)
 
-Cache heavy aggregates (1–5 min)
+🧪 Testing
+# Run all tests
+php artisan test
 
-Soft delete invoices/payments when needed; maintain audit trail
+# Feature tests
+php artisan test --testsuite=Feature
 
-Tests: Feature tests for dashboards, Unit tests for Scopes & Services
+# Unit tests
+php artisan test --testsuite=Unit
 
-Consider adding seller_id or target_user_id to ledger entries for direct seller accounting
+# Specific module
+php artisan test --filter=ProductManagement
 
+🤝 Contributing
 
+Fork the repository
 
+Create your feature branch (git checkout -b feature/amazing)
 
+Commit your changes (git commit -m 'Add some amazing feature')
 
-نبذة مختصرة
+Push to the branch (git push origin feature/amazing)
 
-MegaStore هو نظام تجارة إلكترونية متكامل ومنظم بموديولات: إدارة المنتجات، الطلبات، المدفوعات، ونظام لوحات التحكم. يدعم النظام منتجات بعدة متغيرات (Variants)، خصومات، فواتير ومدفوعات، وسجل محاسبي لتتبع العمليات المالية. يوفر تحكم صلاحيات متقدم وعزل بيانات كل بائع بحسب الدور (Scopes & Policies).
+Open a Pull Request
 
-الميزات الأساسية
+📄 License
 
-كتالوج منتجات متعدد البائعين (Products, ProductVariants, Attributes, AttributeValues)
+This project is licensed under the MIT License — see the LICENSE file for details.
 
-معالجة الطلبات التي قد تحتوي عناصر من عدة بائعين
+🙏 Acknowledgments
 
-دورة فواتير ومدفوعات مع قيود دفترية (LedgerEntries)
+Laravel — The PHP framework for web artisans
 
-محرك خصومات وتسجيل تاريخ التطبيق
+Spatie — Permission & role management
 
-مراجعات المنتجات ونظام الموافقة
+Laravel Fortify — Authentication backend
 
-صلاحيات ومجالات رؤية مبنية على الأدوار (SuperAdmin, Seller, Customer)
-
-API RESTful محمية (Sanctum) وطبقة Services للمنطق التجاري
-
-الوحدات (Modules)
-
-Core: المصادقة (Fortify)، المستخدمون، الأدوار، المصادقة الثنائية، BaseModel، Requests موحّدة
-
-ProductManagement: المنتجات، المتغيرات، السمات، الأقسام، الوسائط
-
-OrderManagement: الطلبات، عناصر الطلب، الخصومات، سجل خصم الطلب
-
-PaymentManagement: الفواتير، المدفوعات، المرتجعات، قيود الدفتر، طرق الدفع
-
-Dashboards: خدمات ومتحكمات لعرض KPIs لكل دور
-
-تركيب سريع (بيئة التطوير)
-git clone <repo>
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
-php artisan storage:link
-
-# اختياري
-php artisan queue:work
-
-ملخص الجداول الأساسية
-
-products: id, category_id, sku, name, slug, status, is_featured, meta, created_by, timestamps
-
-product_variants: id, product_id, sku, price, stock_quantity, low_stock_threshold, weight, is_active
-
-attributes, attribute_values, variant_values (pivot)
-
-categories
-
-discounts, order_discounts, order_discount_history
-
-orders: id, customer_id, tot_amount, status, shipping_address, timestamps
-
-order_items: id, order_id, product_variant_id, unit_price, quantity, subtotal, meta, timestamps
-
-invoices, payments (مع softDeletes), ledger_entries
-
-product_reviews مع قيد فريد (product_id + user_id)
-
-العلاقات المهمة (Eloquent)
-
-User: يملك منتجات (created_by)، ويملك أدوار عبر Spatie
-
-Product: له Variants، ينتمي لقسم، ويملك مراجعات
-
-ProductVariant: ينتمي إلى المنتج، يرتبط بالسمات عبر pivot variant_values
-
-Order: يملك عناصر (OrderItems)، فاتورة (Invoice)، ويمكن ربط خصومات
-
-OrderItem: يشير إلى ProductVariant
-
-Invoice: مرتبط بالطلب، يملك مدفوعات وسجلات دفترية
-
-LedgerEntry: يربط الأحداث المالية بالطلب / الفاتورة / المدفوعات / المرتجعات والمستخدم
-
-لوحة تحكم البائع — KPIs واستعلامات
-
-KPIs:
-
-إجمالي الإيرادات (حصته من الطلبات)
-
-عدد الطلبات الكلي
-
-الطلبات المعلقة
-
-عدد المنتجات منخفضة المخزون
-
-متوسط التقييمات
-
-مثال استعلامات:
-
-// آخر 10 طلبات للبائع
-$orders = Order::whereHas('items.productVariant.product', fn($q) => $q->where('created_by', $sellerId))
-->with(['items.productVariant.product','customer','invoice'])
-->latest()->take(10)->get();
-
-// المنتجات منخفضة المخزون
-$lowStock = ProductVariant::whereHas('product', fn($q) => $q->where('created_by', $sellerId))
-->where(fn($q) => $q->whereNotNull('low_stock_threshold')->whereColumn('stock_quantity','<=','low_stock_threshold'))
-->orWhere('stock_quantity','<=',5)->with('product')->get();
-
-// إيرادات البائع (المدفوعات المكتملة)
-$revenue = Payment::where('status', 'completed')
-->whereHas('invoice.order.items.productVariant.product', fn($q) => $q->where('created_by', $sellerId))->sum('amount');
-
-// أفضل المنتجات مبيعًا
-$top = DB::table('order_items')
-->join('product_variants','order_items.product_variant_id','product_variants.id')
-->join('products','product_variants.product_id','products.id')
-->select('products.id','products.name', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.subtotal) as total_sales'))
-->where('products.created_by', $sellerId)
-->groupBy('products.id','products.name')->orderByDesc('total_qty')->limit(5)->get();
-
-الملاحظات المالية
-
-كل فاتورة/مدفوعات/مرتجعات تولّد قيود دفترية
-
-قيود الدفتر هي المصدر الرئيسي للتقارير المالية
-
-يمكن حساب مستحقات البائع عبر order_items.subtotal أو عبر ledger_entries لمزيد من الدقة
-
-أفضل الممارسات
-
-استخدام scopeVisibleFor لحماية استعلامات كل دور
-
-حفظ snapshot للمنتج عند إنشاء الطلب (order_items.meta)
-
-إضافة مؤشرات (Indexes) للأعمدة المستخدمة بكثرة
-
-استخدام Eager Loading لتجنب N+1
-
-تخزين مؤقت للعمليات الحسابية الثقيلة
-
-soft delete للفواتير والمدفوعات مع الحفاظ على سجل التدقيق
-
-كتابة اختبارات Feature وUnit للتحقق من البيانات والخدمات
-
-التفكير في إضافة seller_id أو target_user_id في ledger entries للحساب المباشر للبائع
-```
+<div align="center"><sub>Built with ❤️ for the Laravel community</sub><br><sub>© 2024 MegaStore. All rights reserved.</sub></div> ```
